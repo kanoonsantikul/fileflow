@@ -20,6 +20,33 @@
       background: #f0f0f0;
     }
 
+    #start-screen {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    #select-folder-button {
+      padding: 16px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      background: #007bff;
+      color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    #select-folder-button:hover {
+      background: #0056d2;
+    }
+
     .scroll-wrapper {
       flex: 1;
       min-height: 0;
@@ -142,6 +169,10 @@
   </style>
 </head>
 <body>
+  <div id="start-screen">
+    <button id="select-folder-button">Pick</button>
+  </div>
+
   <div class="scroll-wrapper">
     <div class="grid" id="grid"></div>
   </div>
@@ -154,7 +185,7 @@
     let itemWidth = 0;
     let itemHeight = 0;
     
-    let paths = Array.from({ length: 500 }, (_, i) => (i + 1) + ".jpg");
+    let paths;
     const itemMap = new Map();
     const selectedItems = new Set();
 
@@ -376,16 +407,44 @@
       });
     }
 
-    renderOnce();
-
-    const observer = new ResizeObserver(() => {
-      updateGridMetrics();
-      updateItemsPosition();
-    });
-    observer.observe(grid);
-
-    document.getElementById('rename-button').addEventListener('click', () => {
+    document.getElementById('reorder-button').addEventListener('click', () => {
       //TODO: to be implement
+    });
+
+    document.getElementById('select-folder-button').addEventListener('click', async () => {
+      try {
+        const dirHandle = await window.showDirectoryPicker();
+        const newPaths = [];
+
+        for await (const [name, handle] of dirHandle.entries()) {
+          if (handle.kind === 'file' && /\.(jpe?g|png|webp|gif)$/i.test(name)) {
+            const file = await handle.getFile();
+            const url = URL.createObjectURL(file);
+            newPaths.push(url);
+          }
+        }
+
+        if (newPaths.length === 0) {
+          alert("No image files found in this folder.");
+          return;
+        }
+
+        document.getElementById('start-screen').style.display = 'none';
+
+        // Replace paths and rerender
+        paths = newPaths;
+        itemMap.clear();
+        grid.innerHTML = '';
+        renderOnce();
+
+        const observer = new ResizeObserver(() => {
+          updateGridMetrics();
+          updateItemsPosition();
+        });
+        observer.observe(grid);
+      } catch (err) {
+        console.error("Folder selection cancelled or failed", err);
+      }
     });
   </script>
 </body>
