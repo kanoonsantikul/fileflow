@@ -81,19 +81,25 @@
     }
 
     .drag-preview {
-      position: absolute;
       pointer-events: none;
-      width: 120px;
-      height: 140px;
-      border-radius: 12px;
-      background: white;
       box-shadow: 0 2px 12px rgba(0,0,0,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
       opacity: 0.9;
       z-index: 1000;
       transition: none;
+    }
+
+    .multi-drag-preview {
+      width: fit-content;
+      height: 50px;
+      justify-content: center;
+      pointer-events: none;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+      opacity: 0.9;
+      z-index: 1000;
+      transition: none;
+      font-weight: bold;
+      line-height: 50px;
+      border: 2px dashed #007bff; 
     }
 
     #reorder-button {
@@ -145,10 +151,11 @@
   <script>
     const grid = document.getElementById('grid');
     let cols = 0;
-    let itemSize = 0;
+    let itemWidth = 0;
+    let itemHeight = 0;
     
-    let items = Array.from({ length: 500 }, (_, i) => (i + 1) + ".jpg");
-    const itemElements = new Map();
+    let paths = Array.from({ length: 500 }, (_, i) => (i + 1) + ".jpg");
+    const itemMap = new Map();
     const selectedItems = new Set();
 
     let draggedIndex = null;
@@ -160,7 +167,7 @@
     let latestClientY = 0;
     let scrollIntervalId = null;
     const SCROLL_MARGIN = 60;
-    const SCROLL_SPEED = 10;
+    const SCROLL_SPEED = 20;
 
     function getFileName(path) {
       return path.split('/').pop();
@@ -184,11 +191,37 @@
       scrollIntervalId = null;
     }
 
-    function createDragPreview(e, content) {
-      previewElement = document.createElement('div');
-      previewElement.className = 'drag-preview';
+    function createItem(path) {
+      const filename = getFileName(path);
+        
+      const item = document.createElement('div');
+      item.className = 'item';
+
+      const img = document.createElement('img');
+      img.src = path;
+      img.alt = `Image ${filename}`;
+      img.className = 'thumb';
+
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = filename;
+
+      item.appendChild(img);
+      item.appendChild(label);
+
+      return item;
+    }
+
+    function createDragPreview(e, selectedItems) {
+      if (selectedItems.size === 1) {
+        previewElement = createItem(Array.from(selectedItems)[0]);
+        previewElement.classList.add('drag-preview');
+      } else {
+        previewElement = document.createElement('div');
+        previewElement.className = 'item multi-drag-preview';
+        previewElement.textContent = `${selectedItems.size} item(s)`;
+      }
       
-      previewElement.textContent = content;
       document.body.appendChild(previewElement);
 
       const rect = e.target.getBoundingClientRect();
@@ -221,22 +254,22 @@
       const x = e.pageX - gridLeft;
       const y = e.pageY - gridTop;
 
-      const col = Math.floor(x / itemSize);
-      const row = Math.floor(y / itemSize);
+      const col = Math.floor(x / itemWidth);
+      const row = Math.floor(y / itemHeight);
       const targetIndex = row * cols + col;
 
       if (
         draggedIndex !== null &&
         targetIndex >= 0 &&
-        targetIndex < items.length &&
+        targetIndex < paths.length &&
         targetIndex !== lastTargetIndex
       ) {
         // to get selected items with preserve order
-        const draggedItems = items.filter(i => selectedItems.has(i));
+        const draggedItems = paths.filter(i => selectedItems.has(i));
         if (draggedItems.length === 0) return;
 
-        items = items.filter(i => !selectedItems.has(i));
-        items.splice(targetIndex, 0, ...draggedItems);
+        paths = paths.filter(i => !selectedItems.has(i));
+        paths.splice(targetIndex, 0, ...draggedItems);
 
         draggedIndex = targetIndex;
         lastTargetIndex = targetIndex;
@@ -256,7 +289,7 @@
 
       const isSingle = selectedItems.size === 1;
       selectedItems.forEach((element, id) => {
-        itemElements.get(id).classList.remove(isSingle ? 'placeholder' : 'selected');
+        itemMap.get(id).classList.remove(isSingle ? 'placeholder' : 'selected');
       });
 
       draggedIndex = null;
@@ -268,53 +301,35 @@
     }
 
     function renderOnce() {
-      items.forEach((item, index) => {
-        const filename = getFileName(item);
-        
-        const div = document.createElement('div');
-        div.className = 'item';
+      paths.forEach((path, index) => {
+        const item = createItem(path);
+        grid.appendChild(item);
+        itemMap.set(path, item);
 
-        const img = document.createElement('img');
-        img.src = item;
-        img.alt = `Image ${filename}`;
-        img.className = 'thumb';
-
-        const label = document.createElement('div');
-        label.className = 'label';
-        label.textContent = filename;
-
-        div.appendChild(img);
-        div.appendChild(label);
-        grid.appendChild(div);
-        itemElements.set(item, div);
-
-        div.addEventListener('mousedown', (e) => {
+        item.addEventListener('mousedown', (e) => {
           if (e.shiftKey) {
-            if (selectedItems.has(item)) {
-              selectedItems.delete(item);
-              div.classList.remove('selected');
+            if (selectedItems.has(path)) {
+              selectedItems.delete(path);
+              item.classList.remove('selected');
             } else {
-              selectedItems.add(item);
-              div.classList.add('selected');
+              selectedItems.add(path);
+              item.classList.add('selected');
             }
             return;
           }
 
           // Select one item
-          if (!selectedItems.has(item)) {
+          if (!selectedItems.has(path)) {
             selectedItems.forEach((element, id) => {
-              itemElements.get(id).classList.remove('selected');
+              itemMap.get(id).classList.remove('selected');
             });
             selectedItems.clear();
-            selectedItems.add(item);
-            div.classList.add('placeholder');
+            selectedItems.add(path);
+            item.classList.add('placeholder');
           }
 
           draggedIndex = index;
-
-          const isSingle = selectedItems.size === 1;
-          const content = isSingle ? Array.from(selectedItems)[0] : `${selectedItems.size} item(s)`;
-          createDragPreview(e, content);
+          createDragPreview(e, selectedItems);
 
           document.addEventListener('mousemove', onMouseMove);
           document.addEventListener('mouseup', onMouseUp);
@@ -326,32 +341,33 @@
     }
 
     function updateGridMetrics() {
-      const sampleItem = itemElements.values().next().value;
+      const sampleItem = itemMap.values().next().value;
       if (!sampleItem) return;
 
       const rect = sampleItem.getBoundingClientRect();
-      itemSize = rect.width + 12;
-      cols = Math.floor(grid.clientWidth / itemSize);
+      itemWidth = rect.width + 12;
+      itemHeight = rect.height + 12;
+      cols = Math.floor(grid.clientWidth / itemWidth);
 
-      const rowCount = Math.ceil(items.length / cols);
-      grid.style.height = `${rowCount * itemSize}px`;
+      const rowCount = Math.ceil(paths.length / cols);
+      grid.style.height = `${rowCount * itemHeight}px`;
     }
 
     function calculatePosition(index) {
       const row = Math.floor(index / cols);
       const col = index % cols;
-      const totalWidth = cols * itemSize;
+      const totalWidth = cols * itemWidth;
       const gridWidth = grid.clientWidth;
       const offsetX = (gridWidth - totalWidth) / 2;
       return {
-        x: offsetX + col * itemSize,
-        y: row * itemSize
+        x: offsetX + col * itemWidth,
+        y: row * itemHeight
       };
     }
 
     function updateItemsPosition() {
-      items.forEach((item, index) => {
-        const el = itemElements.get(item);
+      paths.forEach((item, index) => {
+        const el = itemMap.get(item);
         const pos = calculatePosition(index);
         const targetTransform = `translate(${pos.x}px, ${pos.y}px)`;
         if (el.style.transform !== targetTransform) {
