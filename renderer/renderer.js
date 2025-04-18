@@ -1,52 +1,77 @@
 const imageList = document.getElementById('image-list');
 const renameBtn = document.getElementById('rename-btn');
-const prefixInput = document.getElementById('prefix');
 const selectBtn = document.getElementById('select-btn');
+const mainApp = document.getElementById('main-app');
+const startScreen = document.getElementById('start-screen');
 
-let filePaths = [];
-
-selectBtn.addEventListener('click', async () => {
-  const result = await window.api.selectFolder();
-  if (!result) return;
-
-  filePaths = result.images;
-  renderImages();
-});
+let items = [];
+let dragSrcIndex = null;
+let placeholder = null;
+let placeholderIndex = null;
 
 function renderImages() {
   imageList.innerHTML = '';
-  filePaths.forEach((path, i) => {
+  items.forEach((path, i) => {
     const li = document.createElement('li');
-    li.textContent = `${i + 1}. ${path.split(/[\\/]/).pop()}`;
     li.draggable = true;
     li.dataset.index = i;
+
+    const ext = path.split('.').pop().toLowerCase();
+
+    if (['mp4', 'webm'].includes(ext)) {
+      const video = document.createElement('video');
+      video.src = path;
+      video.muted = true;
+      video.addEventListener('loadeddata', () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 140;
+        canvas.height = 100;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const img = document.createElement('img');
+        img.src = canvas.toDataURL();
+        img.className = 'thumbnail';
+        li.prepend(img);
+      });
+    } else {
+      const img = document.createElement('img');
+      img.src = path;
+      img.className = 'thumbnail';
+      li.appendChild(img);
+    }
+
+    const label = document.createElement('div');
+    label.textContent = path.split(/[\\/]/).pop();
+    li.appendChild(label);
+
     imageList.appendChild(li);
     addDragListeners(li);
   });
 }
 
-function addDragListeners(el) {
-  el.addEventListener('dragstart', e => {
-    el.classList.add('dragging');
-    e.dataTransfer.setData('text/plain', el.dataset.index);
-  });
-  el.addEventListener('dragend', () => el.classList.remove('dragging'));
-  el.addEventListener('dragover', e => e.preventDefault());
-  el.addEventListener('drop', e => {
-    e.preventDefault();
-    const from = +e.dataTransfer.getData('text/plain');
-    const to = +el.dataset.index;
-    const moved = filePaths.splice(from, 1)[0];
-    filePaths.splice(to, 0, moved);
-    renderImages();
-  });
+function getPrefix(filename) {
+  const name = filename.split('.')[0]; // remove extension
+  const match = name.match(/^(.*?)(\d+)$/); // match like: name + number
+  return match ? match[1] : 'photo';
 }
 
+selectBtn.addEventListener('click', async () => {
+  const result = await window.api.selectFolder();
+  if (!result) return;
+
+  items = result.images;
+  startScreen.style.display = 'none';
+  mainApp.style.display = 'block';
+  renameBtn.style.display = 'block';
+  renderOnce();
+});
+
 renameBtn.addEventListener('click', async () => {
-  const prefix = prefixInput.value.trim();
-  if (!prefix || filePaths.length === 0) return alert('Enter prefix and select a folder!');
-  await window.api.renameImages(filePaths, prefix);
-  alert('Images renamed successfully!');
-  filePaths = [];
-  imageList.innerHTML = '';
+  if (items.length === 0) return alert('No files to rename.');
+
+  const firstName = items[0].split(/[\\/]/).pop();
+  const prefix = getPrefix(firstName);
+
+  await window.api.renameImages(items, prefix);
+  alert('Renamed successfully!');
 });
