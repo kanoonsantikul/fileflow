@@ -39,9 +39,9 @@ ipcMain.handle('select-folder', async () => {
   const dir = result.filePaths[0];
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'];
 
-  const images = fs.readdirSync(dir)
+  const paths = fs.readdirSync(dir)
     .filter(file => imageExtensions.includes(path.extname(file).toLowerCase()))
     .map(file => path.join(dir, file));
 
-  return { dir, images };
+  return { dir, paths };
 });

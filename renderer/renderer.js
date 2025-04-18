@@ -1,77 +1,265 @@
-const imageList = document.getElementById('image-list');
-const renameBtn = document.getElementById('rename-btn');
-const selectBtn = document.getElementById('select-btn');
-const mainApp = document.getElementById('main-app');
-const startScreen = document.getElementById('start-screen');
+const grid = document.getElementById('grid');
+let cols = 0;
+let itemWidth = 0;
+let itemHeight = 0;
 
-let items = [];
-let dragSrcIndex = null;
-let placeholder = null;
-let placeholderIndex = null;
+let paths;
+const itemMap = new Map();
+const selectedItems = new Set();
 
-function renderImages() {
-  imageList.innerHTML = '';
-  items.forEach((path, i) => {
-    const li = document.createElement('li');
-    li.draggable = true;
-    li.dataset.index = i;
+let draggedIndex = null;
+let lastTargetIndex = null;
+let previewElement = null;
+let previewOffsetX = 0;
+let previewOffsetY = 0;
 
-    const ext = path.split('.').pop().toLowerCase();
+let latestClientY = 0;
+let scrollIntervalId = null;
+const SCROLL_MARGIN = 60;
+const SCROLL_SPEED = 20;
 
-    if (['mp4', 'webm'].includes(ext)) {
-      const video = document.createElement('video');
-      video.src = path;
-      video.muted = true;
-      video.addEventListener('loadeddata', () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 140;
-        canvas.height = 100;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const img = document.createElement('img');
-        img.src = canvas.toDataURL();
-        img.className = 'thumbnail';
-        li.prepend(img);
-      });
-    } else {
-      const img = document.createElement('img');
-      img.src = path;
-      img.className = 'thumbnail';
-      li.appendChild(img);
+function getFileName(path) {
+  return path.split('/').pop();
+}
+
+function startAutoScroll() {
+  if (scrollIntervalId) return;
+  const wrapper = document.querySelector('.scroll-wrapper');
+  scrollIntervalId = setInterval(() => {
+    const rect = wrapper.getBoundingClientRect();
+    if (latestClientY < rect.top + SCROLL_MARGIN) {
+      wrapper.scrollTop -= SCROLL_SPEED;
+    } else if (latestClientY > rect.bottom - SCROLL_MARGIN) {
+      wrapper.scrollTop += SCROLL_SPEED;
     }
+  }, 16);
+}
 
-    const label = document.createElement('div');
-    label.textContent = path.split(/[\\/]/).pop();
-    li.appendChild(label);
+function stopAutoScroll() {
+  clearInterval(scrollIntervalId);
+  scrollIntervalId = null;
+}
 
-    imageList.appendChild(li);
-    addDragListeners(li);
+function createItem(path) {
+  const filename = getFileName(path);
+    
+  const item = document.createElement('div');
+  item.className = 'item';
+
+  const img = document.createElement('img');
+  img.src = path;
+  img.alt = `Image ${filename}`;
+  img.className = 'thumb';
+
+  const label = document.createElement('div');
+  label.className = 'label';
+  label.textContent = filename;
+
+  item.appendChild(img);
+  item.appendChild(label);
+
+  return item;
+}
+
+function createDragPreview(e, selectedItems) {
+  if (selectedItems.size === 1) {
+    previewElement = createItem(Array.from(selectedItems)[0]);
+    previewElement.classList.add('drag-preview');
+  } else {
+    previewElement = document.createElement('div');
+    previewElement.className = 'item multi-drag-preview';
+    previewElement.textContent = `${selectedItems.size} item(s)`;
+  }
+  
+  document.body.appendChild(previewElement);
+
+  const rect = e.target.getBoundingClientRect();
+  previewOffsetX = e.clientX - rect.left;
+  previewOffsetY = e.clientY - rect.top;
+  movePreview(e);
+}
+
+function movePreview(e) {
+  if (previewElement) {
+    previewElement.style.left = `${e.pageX - previewOffsetX}px`;
+    previewElement.style.top = `${e.pageY - previewOffsetY}px`;
+  }
+}
+
+function getOffset(el) {
+  const rect = el.getBoundingClientRect();
+  return {
+    top: rect.top + window.scrollY,
+    left: rect.left + window.scrollX
+  };
+}
+
+function onMouseMove(e) {
+  latestClientY = e.clientY;
+  movePreview(e);
+  startAutoScroll();
+
+  const { top: gridTop, left: gridLeft } = getOffset(grid);
+  const x = e.pageX - gridLeft;
+  const y = e.pageY - gridTop;
+
+  const col = Math.floor(x / itemWidth);
+  const row = Math.floor(y / itemHeight);
+  const targetIndex = row * cols + col;
+
+  if (
+    draggedIndex !== null &&
+    targetIndex >= 0 &&
+    targetIndex < paths.length &&
+    targetIndex !== lastTargetIndex
+  ) {
+    // to get selected items with preserve order
+    const draggedItems = paths.filter(i => selectedItems.has(i));
+    if (draggedItems.length === 0) return;
+
+    paths = paths.filter(i => !selectedItems.has(i));
+    paths.splice(targetIndex, 0, ...draggedItems);
+
+    draggedIndex = targetIndex;
+    lastTargetIndex = targetIndex;
+
+    updateItemsPosition(targetIndex);
+  }
+}
+
+function onMouseUp() {
+  if (previewElement) {
+    previewElement.remove();
+    previewElement = null;
+  }
+
+  stopAutoScroll();
+  updateItemsPosition();
+
+  const isSingle = selectedItems.size === 1;
+  selectedItems.forEach((element, id) => {
+    itemMap.get(id).classList.remove(isSingle ? 'placeholder' : 'selected');
+  });
+
+  draggedIndex = null;
+  lastTargetIndex = null;
+  selectedItems.clear();
+
+  document.removeEventListener('mousemove', onMouseMove);
+  document.removeEventListener('mouseup', onMouseUp);
+}
+
+function renderGrid() {
+  paths.forEach((path, index) => {
+    const item = createItem(path);
+    grid.appendChild(item);
+    itemMap.set(path, item);
+
+    item.addEventListener('mousedown', (e) => {
+      if (e.shiftKey) {
+        if (selectedItems.has(path)) {
+          selectedItems.delete(path);
+          item.classList.remove('selected');
+        } else {
+          selectedItems.add(path);
+          item.classList.add('selected');
+        }
+        return;
+      }
+
+      // Select one item
+      if (!selectedItems.has(path)) {
+        selectedItems.forEach((element, id) => {
+          itemMap.get(id).classList.remove('selected');
+        });
+        selectedItems.clear();
+        selectedItems.add(path);
+        item.classList.add('placeholder');
+      }
+
+      draggedIndex = index;
+      createDragPreview(e, selectedItems);
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+  });
+
+  updateGridMetrics();
+  updateItemsPosition();
+}
+
+function updateGridMetrics() {
+  const sampleItem = itemMap.values().next().value;
+  if (!sampleItem) return;
+
+  const rect = sampleItem.getBoundingClientRect();
+  itemWidth = rect.width + 12;
+  itemHeight = rect.height + 12;
+  cols = Math.floor(grid.clientWidth / itemWidth);
+
+  const rowCount = Math.ceil(paths.length / cols);
+  grid.style.height = `${rowCount * itemHeight}px`;
+}
+
+function calculatePosition(index) {
+  const row = Math.floor(index / cols);
+  const col = index % cols;
+  const totalWidth = cols * itemWidth;
+  const gridWidth = grid.clientWidth;
+  const offsetX = (gridWidth - totalWidth) / 2;
+  return {
+    x: offsetX + col * itemWidth,
+    y: row * itemHeight
+  };
+}
+
+function updateItemsPosition() {
+  paths.forEach((item, index) => {
+    const el = itemMap.get(item);
+    const pos = calculatePosition(index);
+    const targetTransform = `translate(${pos.x}px, ${pos.y}px)`;
+    if (el.style.transform !== targetTransform) {
+      el.style.transform = targetTransform;
+    }
   });
 }
 
-function getPrefix(filename) {
-  const name = filename.split('.')[0]; // remove extension
-  const match = name.match(/^(.*?)(\d+)$/); // match like: name + number
-  return match ? match[1] : 'photo';
-}
+document.getElementById('select-folder-button').addEventListener('click', async () => {
+  try {
+    const result = await window.api.selectFolder();
+    if (!result || result.paths.length === 0) {
+      alert("No image files found in this folder.");;
+    }
 
-selectBtn.addEventListener('click', async () => {
-  const result = await window.api.selectFolder();
-  if (!result) return;
+    document.getElementById('start-screen').style.display = 'none';
 
-  items = result.images;
-  startScreen.style.display = 'none';
-  mainApp.style.display = 'block';
-  renameBtn.style.display = 'block';
-  renderOnce();
+    // Replace paths and rerender
+    paths = result.paths;
+    itemMap.clear();
+    grid.innerHTML = '';
+    renderGrid();
+
+    const observer = new ResizeObserver(() => {
+      updateGridMetrics();
+      updateItemsPosition();
+    });
+    observer.observe(grid);
+  } catch (err) {
+    console.error("Folder selection cancelled or failed", err);
+  }
 });
 
-renameBtn.addEventListener('click', async () => {
-  if (items.length === 0) return alert('No files to rename.');
-
+document.getElementById('reorder-button').addEventListener('click', async () => {
   const firstName = items[0].split(/[\\/]/).pop();
   const prefix = getPrefix(firstName);
 
   await window.api.renameImages(items, prefix);
   alert('Renamed successfully!');
 });
+
+function getPrefix(filename) {
+  const name = filename.split('.')[0]; // remove extension
+  const match = name.match(/^(.*?)(\d+)$/); // match like: name + number
+  return match ? match[1] : 'photo';
+}
