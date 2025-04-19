@@ -1,3 +1,5 @@
+'use strict'
+
 const grid = document.getElementById('grid');
 let cols = 0;
 let itemWidth = 0;
@@ -47,7 +49,7 @@ function createItem(path) {
   item.className = 'item';
 
   const img = document.createElement('img');
-  img.src = path;
+  img.loading = 'lazy';
   img.alt = `Image ${filename}`;
   img.className = 'thumb';
 
@@ -57,6 +59,10 @@ function createItem(path) {
 
   item.appendChild(img);
   item.appendChild(label);
+
+  resizeImage(path, 300).then(resizedURL => {
+    img.src = resizedURL;
+  });
 
   return item;
 }
@@ -225,41 +231,57 @@ function updateItemsPosition() {
   });
 }
 
+async function resizeImage(filePath, maxSize = 300) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        resolve(url);
+      }, 'image/jpeg', 0.85);
+    };
+    img.onerror = reject;
+    img.src = filePath;
+  });
+}
+
 document.getElementById('select-folder-button').addEventListener('click', async () => {
   try {
-    const result = await window.api.selectFolder();
-    if (!result || result.paths.length === 0) {
-      alert("No image files found in this folder.");;
+    const dirHandle = await window.showDirectoryPicker();
+    const newPaths = [];
+
+    for await (const [name, handle] of dirHandle.entries()) {
+      if (handle.kind === 'file' && /\.(jpe?g|png|webp|gif)$/i.test(name)) {
+        const file = await handle.getFile();
+        const url = URL.createObjectURL(file);
+        newPaths.push({ url, name });
+      }
     }
 
+    if (newPaths.length === 0) {
+      alert("No image files found in this folder.");
+      return;
+    }
+
+    // Hide start screen
     document.getElementById('start-screen').style.display = 'none';
 
     // Replace paths and rerender
-    paths = result.paths;
+    paths = newPaths.map(p => p.url);
     itemMap.clear();
     grid.innerHTML = '';
     renderGrid();
-
-    const observer = new ResizeObserver(() => {
-      updateGridMetrics();
-      updateItemsPosition();
-    });
-    observer.observe(grid);
   } catch (err) {
     console.error("Folder selection cancelled or failed", err);
   }
 });
 
 document.getElementById('reorder-button').addEventListener('click', async () => {
-  const firstName = items[0].split(/[\\/]/).pop();
-  const prefix = getPrefix(firstName);
-
-  await window.api.renameImages(items, prefix);
-  alert('Renamed successfully!');
+  //TODO
 });
-
-function getPrefix(filename) {
-  const name = filename.split('.')[0]; // remove extension
-  const match = name.match(/^(.*?)(\d+)$/); // match like: name + number
-  return match ? match[1] : 'photo';
-}
