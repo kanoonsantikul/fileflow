@@ -60,7 +60,7 @@ function createItem(path) {
   item.appendChild(img);
   item.appendChild(label);
 
-  resizeImage(path, 300).then(resizedURL => {
+  resizeImage(path, 150).then(resizedURL => {
     img.src = resizedURL;
   });
 
@@ -156,6 +156,12 @@ function onMouseUp() {
 }
 
 function renderGrid() {
+  const observer = new ResizeObserver(() => {
+    updateGridMetrics();
+    updateItemsPosition();
+  });
+  observer.observe(grid);
+
   paths.forEach((path, index) => {
     const item = createItem(path);
     grid.appendChild(item);
@@ -231,7 +237,7 @@ function updateItemsPosition() {
   });
 }
 
-async function resizeImage(filePath, maxSize = 300) {
+async function resizeImage(filePath, maxSize = 150) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
