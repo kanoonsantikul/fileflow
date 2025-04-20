@@ -156,7 +156,11 @@ function onMouseUp() {
   window.removeEventListener('mouseup', onMouseUp);
 }
 
-function renderGrid() {
+function renderGrid(originalPaths) {
+  paths = originalPaths;
+  itemMap.clear();
+  grid.innerHTML = '';
+
   const observer = new ResizeObserver(() => {
     updateGridMetrics();
     updateItemsPosition();
@@ -262,18 +266,15 @@ async function resizeImage(filePath, maxSize = 150) {
 
 document.getElementById('select-folder-button').addEventListener('click', async () => {
   try {
-    const fullPaths = await window.fileAPI.selectFolder();
-    if (!fullPaths || fullPaths.length === 0) {
+    const originalPaths = await window.fileAPI.selectFolder();
+    if (!originalPaths || originalPaths.length === 0) {
       alert("No image files found.");
       return;
     }
 
     document.getElementById('start-screen').style.display = 'none';
 
-    paths = fullPaths;  // save full paths
-    itemMap.clear();
-    grid.innerHTML = '';
-    renderGrid();
+    renderGrid(originalPaths);
   } catch (err) {
     console.error("Error selecting folder", err);
   }
@@ -311,6 +312,7 @@ document.getElementById('confirm-rename').addEventListener('click', async () => 
   const result = await window.fileAPI.reorderImages(paths, prefix);
 
   if (result.success) {
+    renderGrid(result.newPaths);
     alert("Images reordered and renamed successfully!");
   } else {
     alert("Error reordering files: " + result.error);

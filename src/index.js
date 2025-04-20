@@ -70,24 +70,33 @@ ipcMain.handle('select-folder', async () => {
   return files;
 });
 
-ipcMain.handle('reorder-images', async (event, paths, prefix) => {
+ipcMain.handle('reorder-images', async (_, paths, prefix) => {
   try {
-    const digits = String(paths.length).length;
+    const dir = path.dirname(paths[0]);
+    const zeroPad = paths.length.toString().length;
+    const tempPaths = [];
+    const newPaths = [];
 
+    // Step 1: rename to temporary names
     for (let i = 0; i < paths.length; i++) {
-      const oldPath = paths[i];
-      const ext = path.extname(oldPath);
-      const newName = `${prefix}${String(i + 1).padStart(digits, '0')}${ext}`;
-      const newPath = path.join(path.dirname(oldPath), newName);
-
-      if (oldPath !== newPath) {
-        fs.renameSync(oldPath, newPath);
-      }
+      const ext = path.extname(paths[i]);
+      const tempName = `.temp_${prefix}_${i}${ext}`;
+      const tempPath = path.join(dir, tempName);
+      fs.renameSync(paths[i], tempPath);
+      tempPaths.push(tempPath);
     }
 
-    return { success: true };
+    // Step 2: rename from temp to final names
+    for (let i = 0; i < tempPaths.length; i++) {
+      const ext = path.extname(tempPaths[i]);
+      const finalName = `${prefix}${String(i + 1).padStart(zeroPad, '0')}${ext}`;
+      const finalPath = path.join(dir, finalName);
+      fs.renameSync(tempPaths[i], finalPath);
+      newPaths.push(finalPath);
+    }
+
+    return { success: true, newPaths };
   } catch (error) {
-    console.error("Rename error:", error);
     return { success: false, error: error.message };
   }
 });
