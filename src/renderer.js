@@ -8,6 +8,7 @@ let itemHeight = 0;
 let paths;
 const itemMap = new Map();
 const selectedItems = new Set();
+const thumbURLMap = new Map();
 
 let draggedIndex = null;
 let lastTargetIndex = null;
@@ -160,6 +161,12 @@ function renderGrid(originalPaths) {
   paths = originalPaths;
   itemMap.clear();
   grid.innerHTML = '';
+  
+  // 🔥 Cleanup all old blob URLs before re-rendering
+  for (const url of thumbURLMap.values()) {
+    URL.revokeObjectURL(url);
+  }
+  thumbURLMap.clear();
 
   const observer = new ResizeObserver(() => {
     updateGridMetrics();
@@ -255,14 +262,22 @@ async function resizeImage(filePath, maxSize = 150) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(blob => {
-        const url = URL.createObjectURL(blob);
-        resolve(url);
+        const newURL = URL.createObjectURL(blob);
+
+        // 🔥 Revoke old URL if exists
+        if (thumbURLMap.has(filePath)) {
+          URL.revokeObjectURL(thumbURLMap.get(filePath));
+        }
+
+        thumbURLMap.set(filePath, newURL);
+        resolve(newURL);
       }, 'image/jpeg', 0.85);
     };
     img.onerror = reject;
-    img.src = `file://${filePath}`;
+    img.src = `file://${filePath}?v=${Date.now()}`;
   });
 }
+
 
 document.getElementById('select-folder-button').addEventListener('click', async () => {
   try {
@@ -313,7 +328,6 @@ document.getElementById('confirm-rename').addEventListener('click', async () => 
 
   if (result.success) {
     renderGrid(result.newPaths);
-    alert("Images reordered and renamed successfully!");
   } else {
     alert("Error reordering files: " + result.error);
   }
