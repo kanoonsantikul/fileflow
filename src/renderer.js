@@ -6,6 +6,7 @@ let itemWidth = 0;
 let itemHeight = 0;
 
 let paths;
+let pathsBackup;
 const itemMap = new Map();
 const selectedItems = new Set();
 const thumbURLMap = new Map();
@@ -159,6 +160,7 @@ function onMouseUp() {
 
 function renderGrid(originalPaths) {
   paths = originalPaths;
+  pathsBackup = [...paths];
   itemMap.clear();
   grid.innerHTML = '';
   
@@ -331,4 +333,8 @@ document.getElementById('confirm-rename').addEventListener('click', async () => 
   } else {
     alert("Error reordering files: " + result.error);
   }
+});
+
+document.getElementById('reset-button').addEventListener('click', () => {
+  renderGrid([...pathsBackup]);
 });
