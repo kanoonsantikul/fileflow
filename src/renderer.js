@@ -102,8 +102,6 @@ function getOffset(element) {
 }
 
 function onMouseMove(event) {
-  console.log(event);
-  
   latestClientY = event.clientY;
   movePreview(event);
   startAutoScroll();
@@ -258,41 +256,43 @@ async function resizeImage(filePath, maxSize = 150) {
       }, 'image/jpeg', 0.85);
     };
     img.onerror = reject;
-    img.src = filePath;
+    img.src = `file://${filePath}`;
   });
 }
 
 document.getElementById('select-folder-button').addEventListener('click', async () => {
   try {
-    const dirHandle = await window.showDirectoryPicker();
-    const newPaths = [];
-
-    for await (const [name, handle] of dirHandle.entries()) {
-      if (handle.kind === 'file' && /\.(jpe?g|png|webp|gif)$/i.test(name)) {
-        const file = await handle.getFile();
-        const url = URL.createObjectURL(file);
-        newPaths.push({ url, name });
-      }
-    }
-
-    if (newPaths.length === 0) {
-      alert("No image files found in this folder.");
+    const fullPaths = await window.fileAPI.selectFolder();
+    if (!fullPaths || fullPaths.length === 0) {
+      alert("No image files found.");
       return;
     }
 
-    // Hide start screen
     document.getElementById('start-screen').style.display = 'none';
 
-    // Replace paths and rerender
-    paths = newPaths.map(p => p.url);
+    paths = fullPaths;  // save full paths
     itemMap.clear();
     grid.innerHTML = '';
     renderGrid();
   } catch (err) {
-    console.error("Folder selection cancelled or failed", err);
+    console.error("Error selecting folder", err);
   }
 });
 
 document.getElementById('reorder-button').addEventListener('click', async () => {
-  //TODO
+  if (!paths || paths.length === 0) {
+    return;
+  }
+  
+  const firstName = getFileName(paths[0]);
+  const match = firstName.match(/^[^\d]+/);
+  const prefix = match ? match[0] : 'img';
+
+  const result = await window.fileAPI.reorderImages(paths, prefix);
+
+  if (result.success) {
+    alert("Images renamed successfully!");
+  } else {
+    alert("Error renaming files: " + result.error);
+  }
 });

@@ -1,5 +1,6 @@
-const { app, BrowserWindow } = require('electron');
+const { app, ipcMain, BrowserWindow, dialog } = require('electron');
 const path = require('node:path');
+const fs = require('fs');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -51,5 +52,42 @@ app.on('window-all-closed', () => {
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+ipcMain.handle('select-folder', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openDirectory']
+  });
+
+  if (canceled || filePaths.length === 0) {
+    return [];
+  }
+
+  const folder = filePaths[0];
+  const files = fs.readdirSync(folder)
+    .filter(file => /\.(jpe?g|png|webp|gif)$/i.test(file))
+    .sort((a, b) => a.localeCompare(b))  // sort by name
+    .map(file => path.join(folder, file));  // return full path
+
+  return files;
+});
+
+ipcMain.handle('reorder-images', async (event, paths, prefix) => {
+  try {
+    const digits = String(paths.length).length;
+
+    for (let i = 0; i < paths.length; i++) {
+      const oldPath = paths[i];
+      const ext = path.extname(oldPath);
+      const newName = `${prefix}${String(i + 1).padStart(digits, '0')}${ext}`;
+      const newPath = path.join(path.dirname(oldPath), newName);
+
+      if (oldPath !== newPath) {
+        fs.renameSync(oldPath, newPath);
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Rename error:", error);
+    return { success: false, error: error.message };
+  }
+});
