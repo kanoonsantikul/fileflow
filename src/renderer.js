@@ -279,20 +279,40 @@ document.getElementById('select-folder-button').addEventListener('click', async 
   }
 });
 
-document.getElementById('reorder-button').addEventListener('click', async () => {
+document.getElementById('reorder-button').addEventListener('click', () => {
   if (!paths || paths.length === 0) {
     return;
   }
-  
+
   const firstName = getFileName(paths[0]);
   const match = firstName.match(/^[^\d]+/);
-  const prefix = match ? match[0] : 'img';
+  const suggestedPrefix = match ? match[0] : 'img_';
+
+  const modal = document.getElementById('rename-modal');
+  const input = document.getElementById('prefix-input');
+  input.value = suggestedPrefix;
+
+  modal.classList.remove('hidden');
+});
+
+document.getElementById('cancel-rename').addEventListener('click', () => {
+  document.getElementById('rename-modal').classList.add('hidden');
+});
+
+document.getElementById('confirm-rename').addEventListener('click', async () => {
+  const prefix = document.getElementById('prefix-input').value.trim();
+  if (!prefix) {
+    alert("Please enter a valid prefix.");
+    return;
+  }
+
+  document.getElementById('rename-modal').classList.add('hidden');
 
   const result = await window.fileAPI.reorderImages(paths, prefix);
 
   if (result.success) {
-    alert("Images renamed successfully!");
+    alert("Images reordered and renamed successfully!");
   } else {
-    alert("Error renaming files: " + result.error);
+    alert("Error reordering files: " + result.error);
   }
 });
