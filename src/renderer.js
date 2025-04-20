@@ -52,6 +52,7 @@ function createItem(path) {
   img.loading = 'lazy';
   img.alt = `Image ${filename}`;
   img.className = 'thumb';
+  img.draggable = false;
 
   const label = document.createElement('div');
   label.className = 'label';
@@ -67,7 +68,7 @@ function createItem(path) {
   return item;
 }
 
-function createDragPreview(e, selectedItems) {
+function createDragPreview(event, selectedItems) {
   if (selectedItems.size === 1) {
     previewElement = createItem(Array.from(selectedItems)[0]);
     previewElement.classList.add('drag-preview');
@@ -79,35 +80,37 @@ function createDragPreview(e, selectedItems) {
   
   document.body.appendChild(previewElement);
 
-  const rect = e.target.getBoundingClientRect();
-  previewOffsetX = e.clientX - rect.left;
-  previewOffsetY = e.clientY - rect.top;
-  movePreview(e);
+  const rect = event.target.getBoundingClientRect();
+  previewOffsetX = event.clientX - rect.left;
+  previewOffsetY = event.clientY - rect.top;
+  movePreview(event);
 }
 
-function movePreview(e) {
+function movePreview(event) {
   if (previewElement) {
-    previewElement.style.left = `${e.pageX - previewOffsetX}px`;
-    previewElement.style.top = `${e.pageY - previewOffsetY}px`;
+    previewElement.style.left = `${event.pageX - previewOffsetX}px`;
+    previewElement.style.top = `${event.pageY - previewOffsetY}px`;
   }
 }
 
-function getOffset(el) {
-  const rect = el.getBoundingClientRect();
+function getOffset(element) {
+  const rect = element.getBoundingClientRect();
   return {
     top: rect.top + window.scrollY,
     left: rect.left + window.scrollX
   };
 }
 
-function onMouseMove(e) {
-  latestClientY = e.clientY;
-  movePreview(e);
+function onMouseMove(event) {
+  console.log(event);
+  
+  latestClientY = event.clientY;
+  movePreview(event);
   startAutoScroll();
 
   const { top: gridTop, left: gridLeft } = getOffset(grid);
-  const x = e.pageX - gridLeft;
-  const y = e.pageY - gridTop;
+  const x = event.pageX - gridLeft;
+  const y = event.pageY - gridTop;
 
   const col = Math.floor(x / itemWidth);
   const row = Math.floor(y / itemHeight);
@@ -151,8 +154,8 @@ function onMouseUp() {
   lastTargetIndex = null;
   selectedItems.clear();
 
-  document.removeEventListener('mousemove', onMouseMove);
-  document.removeEventListener('mouseup', onMouseUp);
+  window.removeEventListener('mousemove', onMouseMove);
+  window.removeEventListener('mouseup', onMouseUp);
 }
 
 function renderGrid() {
@@ -167,8 +170,10 @@ function renderGrid() {
     grid.appendChild(item);
     itemMap.set(path, item);
 
-    item.addEventListener('mousedown', (e) => {
-      if (e.shiftKey) {
+    item.addEventListener('mousedown', (event) => {
+      event.preventDefault();
+
+      if (event.shiftKey) {
         if (selectedItems.has(path)) {
           selectedItems.delete(path);
           item.classList.remove('selected');
@@ -190,10 +195,10 @@ function renderGrid() {
       }
 
       draggedIndex = index;
-      createDragPreview(e, selectedItems);
+      createDragPreview(event, selectedItems);
 
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
     });
   });
 
