@@ -22,6 +22,36 @@ let scrollIntervalId = null;
 const SCROLL_MARGIN = 60;
 const SCROLL_SPEED = 20;
 
+const MAX_CONCURRENT = 50;
+let activeLoads = 0;
+const loadQueue = [];
+
+function enqueueImageLoad(task) {
+  return new Promise((resolve, reject) => {
+    const wrappedTask = async () => {
+      try {
+        activeLoads++;
+        const result = await task();
+        resolve(result);
+      } catch (err) {
+        reject(err);
+      } finally {
+        activeLoads--;
+        if (loadQueue.length > 0) {
+          const next = loadQueue.shift();
+          next();
+        }
+      }
+    };
+
+    if (activeLoads < MAX_CONCURRENT) {
+      wrappedTask();
+    } else {
+      loadQueue.push(wrappedTask);
+    }
+  });
+}
+
 function getFileName(path) {
   return path.split('/').pop();
 }
@@ -48,7 +78,7 @@ function createItem(path) {
   const filename = getFileName(path);
     
   const item = document.createElement('div');
-  item.className = 'item';
+  item.className = 'item loading';
 
   const img = document.createElement('img');
   img.loading = 'lazy';
@@ -63,9 +93,14 @@ function createItem(path) {
   item.appendChild(img);
   item.appendChild(label);
 
-  resizeImage(path, 150).then(resizedURL => {
-    img.src = resizedURL;
-  });
+  enqueueImageLoad(() => resizeImage(path, 150))
+    .then(resizedURL => {
+      img.src = resizedURL;
+      item.classList.remove('loading');
+    })
+    .catch(err => {
+      console.error('Image load failed for:', path, err);
+    });
 
   return item;
 }
@@ -279,7 +314,6 @@ async function resizeImage(filePath, maxSize = 150) {
     img.src = `file://${filePath}?v=${Date.now()}`;
   });
 }
-
 
 document.getElementById('select-folder-button').addEventListener('click', async () => {
   try {

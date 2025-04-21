@@ -100,6 +100,28 @@ body {
   line-height: 1.2;
 }
 
+.item.loading {
+  background: #ccc;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.item.loading .thumb,
+.item.loading .label {
+  display: none;
+}
+
+@keyframes pulse {
+  0% {
+    background-color: #ccc;
+  }
+  50% {
+    background-color: #ddd;
+  }
+  100% {
+    background-color: #ccc;
+  }
+}
+
 .drag-preview {
   pointer-events: none;
   box-shadow: 0 2px 12px rgba(0,0,0,0.2);
