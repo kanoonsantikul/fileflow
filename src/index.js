@@ -11,6 +11,7 @@ const createWindow = () => {
   // Create the browser window.
   const window = new BrowserWindow({
     show: false,
+    icon: path.join(__dirname, 'assets/fileflow_icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
