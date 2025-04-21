@@ -52,8 +52,8 @@ function enqueueImageLoad(task) {
   });
 }
 
-function getFileName(path) {
-  return path.split('/').pop();
+function getFileName(filePath) {
+  return filePath.split(/[/\\]/).pop();
 }
 
 function startAutoScroll() {
