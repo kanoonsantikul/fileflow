@@ -76,7 +76,7 @@ function stopAutoScroll() {
 
 function createItem(path) {
   const filename = getFileName(path);
-    
+
   const item = document.createElement('div');
   item.className = 'item loading';
 
@@ -104,6 +104,19 @@ function createItem(path) {
 
   return item;
 }
+
+function openFullImage(path) {
+  const modal = document.getElementById('image-modal');
+  const modalImg = document.getElementById('modal-img');
+  modalImg.src = `file://${path}`;
+  modal.classList.remove('hidden');
+}
+
+document.getElementById('image-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'image-modal' || e.target.classList.contains('modal-backdrop')) {
+    document.getElementById('image-modal').classList.add('hidden');
+  }
+});
 
 function createDragPreview(event, selectedItems) {
   if (selectedItems.size === 1) {
@@ -198,7 +211,7 @@ function renderGrid(originalPaths) {
   pathsBackup = [...paths];
   itemMap.clear();
   grid.innerHTML = '';
-  
+
   // 🔥 Cleanup all old blob URLs before re-rendering
   for (const url of thumbURLMap.values()) {
     URL.revokeObjectURL(url);
@@ -230,21 +243,46 @@ function renderGrid(originalPaths) {
         return;
       }
 
-      // Select one item
-      if (!selectedItems.has(path)) {
-        selectedItems.forEach((element, id) => {
-          itemMap.get(id).classList.remove('selected');
-        });
-        selectedItems.clear();
-        selectedItems.add(path);
-        item.classList.add('placeholder');
-      }
+      const startX = event.clientX;
+      const startY = event.clientY;
+      let moved = false;
 
-      draggedIndex = index;
-      createDragPreview(event, selectedItems);
+      const onMouseMoveCheck = (moveEvent) => {
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+          moved = true;
+          window.removeEventListener('mousemove', onMouseMoveCheck);
 
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
+          // Select one item
+          if (!selectedItems.has(path)) {
+            selectedItems.forEach((element, id) => {
+              itemMap.get(id).classList.remove('selected');
+            });
+            selectedItems.clear();
+            selectedItems.add(path);
+            item.classList.add('placeholder');
+          }
+
+          draggedIndex = index;
+          createDragPreview(event, selectedItems);
+
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+        }
+      };
+
+      const onMouseUpCheck = () => {
+        window.removeEventListener('mousemove', onMouseMoveCheck);
+        window.removeEventListener('mouseup', onMouseUpCheck);
+
+        if (!moved) {
+          openFullImage(path); // ✅ Only opens if no movement and no shift
+        }
+      };
+
+      window.addEventListener('mousemove', onMouseMoveCheck);
+      window.addEventListener('mouseup', onMouseUpCheck);
     });
   });
 

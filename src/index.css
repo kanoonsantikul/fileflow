@@ -172,6 +172,29 @@ body {
   border: 2px dashed #007bff; 
 }
 
+#image-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+#image-modal.hidden {
+  display: none;
+}
+
+#image-modal img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+  transition: opacity 0.3s ease;
+  background: white;
+}
+
 #control-buttons {
   position: fixed;
   bottom: 20px;
