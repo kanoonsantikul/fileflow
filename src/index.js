@@ -26,7 +26,7 @@ const createWindow = () => {
   window.loadFile(path.join(__dirname, 'index.html'));
   
   // Open the DevTools.
-  // window.webContents.openDevTools();
+  window.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
@@ -64,7 +64,7 @@ ipcMain.handle('select-folder', async () => {
 
   const folder = filePaths[0];
   const files = fs.readdirSync(folder)
-    .filter(file => /\.(jpe?g|png|webp|gif)$/i.test(file))
+    .filter(file => /\.(jpe?g|png|webp|gif|mp4|mov|avi|mkv|webm)$/i.test(file))
     .sort((a, b) => a.localeCompare(b))  // sort by name
     .map(file => path.join(folder, file));  // return full path
 

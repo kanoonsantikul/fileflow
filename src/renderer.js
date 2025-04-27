@@ -56,6 +56,10 @@ function getFileName(filePath) {
   return filePath.split(/[/\\]/).pop();
 }
 
+function isVideoFile(filePath) {
+  return /\.(mp4|mov|avi|mkv|webm)$/i.test(filePath);
+}
+
 function startAutoScroll() {
   if (scrollIntervalId) return;
   const wrapper = document.querySelector('.scroll-wrapper');
@@ -93,28 +97,57 @@ function createItem(path) {
   item.appendChild(img);
   item.appendChild(label);
 
-  enqueueImageLoad(() => resizeImage(path, 150))
-    .then(resizedURL => {
-      img.src = resizedURL;
-      item.classList.remove('loading');
-    })
-    .catch(err => {
-      console.error('Image load failed for:', path, err);
-    });
-
+  enqueueImageLoad(() => {
+    if (isVideoFile(path)) {
+      return resizeVideoFirstFrame(path, 150);
+    } else {
+      return resizeImage(path, 150);
+    }
+  })
+  .then(resizedURL => {
+    img.src = resizedURL;
+    item.classList.remove('loading');
+  })
+  .catch(err => {
+    console.error('Thumbnail load failed for:', path, err);
+  });
   return item;
 }
 
-function openFullImage(path) {
+function openFullMedia(path) {
   const modal = document.getElementById('image-modal');
   const modalImg = document.getElementById('modal-img');
-  modalImg.src = `file://${path}`;
+  const modalVideo = document.getElementById('modal-video');
+  
+  if (isVideoFile(path)) {
+    modalImg.style.display = 'none';
+    modalVideo.style.display = 'block';
+    
+    modalVideo.src = `file://${path}`;
+    modalVideo.play();
+  } else {
+    modalImg.style.display = 'block';
+    modalVideo.style.display = 'none';
+    
+    modalImg.src = `file://${path}`;
+  }
+
   modal.classList.remove('hidden');
 }
 
 document.getElementById('image-modal').addEventListener('click', (e) => {
   if (e.target.id === 'image-modal' || e.target.classList.contains('modal-backdrop')) {
-    document.getElementById('image-modal').classList.add('hidden');
+    const modal = document.getElementById('image-modal');
+    const modalImg = document.getElementById('modal-img');
+    const modalVideo = document.getElementById('modal-video');
+    
+    if (modalVideo.src) {
+      modalVideo.pause();
+      modalVideo.src = '';
+    }
+    modalImg.src = '';
+    
+    modal.classList.add('hidden');
   }
 });
 
@@ -277,7 +310,7 @@ function renderGrid(originalPaths) {
         window.removeEventListener('mouseup', onMouseUpCheck);
 
         if (!moved) {
-          openFullImage(path); // ✅ Only opens if no movement and no shift
+          openFullMedia(path); // ✅ Only opens if no movement and no shift
         }
       };
 
@@ -337,19 +370,58 @@ async function resizeImage(filePath, maxSize = 150) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(blob => {
-        const newURL = URL.createObjectURL(blob);
-
-        // 🔥 Revoke old URL if exists
         if (thumbURLMap.has(filePath)) {
           URL.revokeObjectURL(thumbURLMap.get(filePath));
         }
 
+        const newURL = URL.createObjectURL(blob);
         thumbURLMap.set(filePath, newURL);
         resolve(newURL);
       }, 'image/jpeg', 0.85);
     };
     img.onerror = reject;
     img.src = `file://${filePath}?v=${Date.now()}`;
+  });
+}
+
+async function resizeVideoFirstFrame(filePath, maxSize = 150) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    video.src = `file://${filePath}?v=${Date.now()}`;
+
+    // Ensure video metadata is loaded
+    video.addEventListener('loadedmetadata', () => {
+      video.currentTime = 0;  // Move to the first frame
+
+      // Wait until the first frame is available
+      video.addEventListener('seeked', () => {
+        // Scale the video frame to fit maxSize
+        const scale = Math.min(maxSize / video.videoWidth, maxSize / video.videoHeight, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth * scale;
+        canvas.height = video.videoHeight * scale;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convert canvas to blob and create object URL
+        canvas.toBlob(blob => {
+          if (thumbURLMap.has(filePath)) {
+            URL.revokeObjectURL(thumbURLMap.get(filePath));
+          }
+
+          const newURL = URL.createObjectURL(blob);
+          thumbURLMap.set(filePath, newURL);
+          resolve(newURL);
+        }, 'image/jpeg', 0.85);
+      });
+    });
+
+    video.addEventListener('error', (e) => {
+      reject(new Error('Failed to load video: ' + e.message));
+    });
   });
 }
 
