@@ -427,7 +427,9 @@ async function resizeVideoFirstFrame(filePath, maxSize = 150) {
 
 document.getElementById('select-folder-button').addEventListener('click', async () => {
   try {
-    const originalPaths = await window.fileAPI.selectFolder();
+    const sortOption = document.getElementById('sort-options').value;
+    const originalPaths = await window.fileAPI.selectFolder(sortOption);
+
     if (!originalPaths || originalPaths.length === 0) {
       alert("No image files found.");
       return;

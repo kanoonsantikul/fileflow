@@ -20,11 +20,11 @@ const createWindow = () => {
   // and load the index.html of the app.
   window.maximize();
   window.once('ready-to-show', () => {
-    window.show()
+    window.show();
   });
-  
+
   window.loadFile(path.join(__dirname, 'index.html'));
-  
+
   // Open the DevTools.
   window.webContents.openDevTools();
 };
@@ -53,7 +53,7 @@ app.on('window-all-closed', () => {
   }
 });
 
-ipcMain.handle('select-folder', async () => {
+ipcMain.handle('select-folder', async (_, sortBy) => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ['openDirectory']
   });
@@ -63,10 +63,22 @@ ipcMain.handle('select-folder', async () => {
   }
 
   const folder = filePaths[0];
-  const files = fs.readdirSync(folder)
+
+  let files = fs.readdirSync(folder)
     .filter(file => /\.(jpe?g|png|webp|gif|mp4|mov|avi|mkv|webm)$/i.test(file))
-    .sort((a, b) => a.localeCompare(b))  // sort by name
-    .map(file => path.join(folder, file));  // return full path
+    .map(file => path.join(folder, file));
+
+  if (sortBy === 'created') {
+    files = files.sort((a, b) => {
+      const statA = fs.statSync(a);
+      const statB = fs.statSync(b);
+  
+      const timeA = statA.birthtimeMs > 0 ? statA.birthtimeMs : statA.mtimeMs;
+      const timeB = statB.birthtimeMs > 0 ? statB.birthtimeMs : statB.mtimeMs;
+  
+      return timeA - timeB;
+    });
+  }
 
   return files;
 });
