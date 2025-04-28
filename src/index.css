@@ -11,19 +11,47 @@ html, body {
 }
 
 #title-bar {
+  position: relative;
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  background-color: #333;
-  color: white;
+  justify-content: center;
   height: 30px;
-  padding: 0 10px;
-  -webkit-app-region: drag;
+  background: #222;
+  color: white;
   user-select: none;
-  z-index: 10;
+  -webkit-app-region: drag;
+  padding: 0 10px;
 }
 
-.title-buttons {
+#title-center {
+  display: flex;
+  align-items: center;
+}
+
+#app-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  -webkit-app-region: no-drag;
+  pointer-events: auto;
+}
+
+#title {
+  font-size: 14px;
+}
+
+#title-buttons {
+  position: absolute;
+  right: 10px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+#title-buttons button {
   background: none;
   border: none;
   color: white;
@@ -40,15 +68,15 @@ html, body {
   height: 32px;
 }
 
-.title-buttons svg {
+#title-buttons button svg {
   fill: white;
 }
 
-.title-buttons:hover {
+#title-buttons button:hover {
   background-color: rgba(255, 255, 255, 0.3);
 }
 
-.title-buttons:active {
+#title-buttons button:active {
   transform: scale(0.95);
   background-color: rgba(255, 255, 255, 0.2);
 }
