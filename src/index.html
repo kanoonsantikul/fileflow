@@ -7,6 +7,24 @@
   <link rel="stylesheet" href="index.css">
 </head>
 <body>
+  <div id="title-bar">
+    <button id="minimize-btn" class="title-buttons">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M3 8a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8z"/>
+      </svg>
+    </button>
+    <button id="maximize-btn" class="title-buttons">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M3 3h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/>
+      </svg>
+    </button>
+    <button id="close-btn" class="title-buttons">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M10.707 4.707a1 1 0 0 1 0 1.414L7.414 8l3.293 3.293a1 1 0 0 1-1.414 1.414L6 9.414l-3.293 3.293a1 1 0 0 1-1.414-1.414L4.586 8 1.293 4.707a1 1 0 1 1 1.414-1.414L6 6.586l3.293-3.293a1 1 0 0 1 1.414 0z"/>
+      </svg>
+    </button>
+  </div>
+
   <div id="start-screen">
     <img src="assets/fileflow_icon.png" alt="FileFlow Logo" class="logo" />
     <h1>FileFlow</h1>
@@ -17,8 +35,8 @@
       <option value="created">Created Date</option>
     </select>
   </div>
-  
-  <div class="scroll-wrapper">
+
+  <div id="scroll-wrapper" class="scroll-wrapper hidden">
     <div class="grid" id="grid"></div>
   </div>
 
@@ -27,8 +45,8 @@
     <img id="modal-img" src="" alt="Image Preview" />
     <video id="modal-video" controls style="display: none;"></video>
   </div>
-  
-  <div id="control-buttons">
+
+  <div id="control-buttons" class="hidden">
     <button id="reorder-button" class="control-button">Reorder</button>
     <button id="reset-button" class="control-button">Reset</button>
   </div>

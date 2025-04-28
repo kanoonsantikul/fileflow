@@ -1,6 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('fileAPI', {
+contextBridge.exposeInMainWorld('api', {
+  minimize: () => ipcRenderer.send('minimize'),
+  maximize: () => ipcRenderer.send('maximize'),
+  close: () => ipcRenderer.send('close'),
   selectFolder: (sortBy) => ipcRenderer.invoke('select-folder', sortBy),
   reorderImages: (paths, prefix) => ipcRenderer.invoke('reorder-images', paths, prefix)
 });

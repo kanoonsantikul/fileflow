@@ -2,6 +2,8 @@ const { app, ipcMain, BrowserWindow, dialog } = require('electron');
 const path = require('node:path');
 const fs = require('fs');
 
+let window;
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
@@ -9,8 +11,9 @@ if (require('electron-squirrel-startup')) {
 
 const createWindow = () => {
   // Create the browser window.
-  const window = new BrowserWindow({
+  window = new BrowserWindow({
     show: false,
+    frame: false,
     icon: path.join(__dirname, 'assets/fileflow_icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -51,6 +54,22 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+ipcMain.on('minimize', () => {
+  window.minimize();
+});
+
+ipcMain.on('maximize', () => {
+  if (window.isMaximized()) {
+    window.restore();
+  } else {
+    window.maximize();
+  }
+});
+
+ipcMain.on('close', () => {
+  window.close();
 });
 
 ipcMain.handle('select-folder', async (_, sortBy) => {

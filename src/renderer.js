@@ -81,7 +81,6 @@ function stopAutoScroll() {
 function createItem(path) {
   const filename = getFileName(path);
   const srcImage = itemMap.get(path)?.querySelector('img.thumb')?.src;
-  console.log(srcImage);
 
   const item = document.createElement('div');
   item.className = srcImage ? 'item' : 'item loading';
@@ -453,7 +452,7 @@ async function resizeVideoFirstFrame(filePath, maxSize = 150) {
 document.getElementById('select-folder-button').addEventListener('click', async () => {
   try {
     const sortOption = document.getElementById('sort-options').value;
-    const originalPaths = await window.fileAPI.selectFolder(sortOption);
+    const originalPaths = await window.api.selectFolder(sortOption);
 
     if (!originalPaths || originalPaths.length === 0) {
       alert("No image files found.");
@@ -461,6 +460,8 @@ document.getElementById('select-folder-button').addEventListener('click', async 
     }
 
     document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('scroll-wrapper').classList.remove('hidden');
+    document.getElementById('control-buttons').classList.remove('hidden');
 
     renderGrid(originalPaths);
   } catch (err) {
@@ -497,7 +498,7 @@ document.getElementById('confirm-rename').addEventListener('click', async () => 
 
   document.getElementById('rename-modal').classList.add('hidden');
 
-  const result = await window.fileAPI.reorderImages(paths, prefix);
+  const result = await window.api.reorderImages(paths, prefix);
 
   if (result.success) {
     renderGrid(result.newPaths);
@@ -508,4 +509,25 @@ document.getElementById('confirm-rename').addEventListener('click', async () => 
 
 document.getElementById('reset-button').addEventListener('click', () => {
   renderGrid([...pathsBackup]);
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  const minimizeButton = document.getElementById('minimize-btn');
+  const maximizeButton = document.getElementById('maximize-btn');
+  const closeButton = document.getElementById('close-btn');
+
+  // Minimize button
+  minimizeButton.addEventListener('click', () => {
+    window.api.minimize();
+  });
+
+  // Maximize/Restore button
+  maximizeButton.addEventListener('click', () => {
+    window.api.maximize();
+  });
+
+  // Close button
+  closeButton.addEventListener('click', () => {
+    window.api.close();
+  });
 });
