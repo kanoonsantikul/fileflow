@@ -80,9 +80,11 @@ function stopAutoScroll() {
 
 function createItem(path) {
   const filename = getFileName(path);
+  const srcImage = itemMap.get(path)?.querySelector('img.thumb')?.src;
+  console.log(srcImage);
 
   const item = document.createElement('div');
-  item.className = 'item loading';
+  item.className = srcImage ? 'item' : 'item loading';
 
   const thumbWrapper = document.createElement('div');
   thumbWrapper.className = 'thumb-wrapper';
@@ -115,20 +117,24 @@ function createItem(path) {
   item.appendChild(thumbWrapper);
   item.appendChild(label);
 
-  enqueueImageLoad(() => {
-    if (isVideoFile(path)) {
-      return resizeVideoFirstFrame(path, 150);
-    } else {
-      return resizeImage(path, 150);
-    }
-  })
-  .then(resizedURL => {
-    img.src = resizedURL;
-    item.classList.remove('loading');
-  })
-  .catch(err => {
-    console.error('Thumbnail load failed for:', path, err);
-  });
+  if (!srcImage) {
+    enqueueImageLoad(() => {
+      if (isVideoFile(path)) {
+        return resizeVideoFirstFrame(path, 150);
+      } else {
+        return resizeImage(path, 150);
+      }
+    })
+    .then(resizedURL => {
+      img.src = resizedURL;
+      item.classList.remove('loading');
+    })
+    .catch(err => {
+      console.error('Thumbnail load failed for:', path, err);
+    });
+  } else {
+    img.src = srcImage;
+  }
 
   return item;
 }
@@ -179,7 +185,7 @@ function createDragPreview(event, selectedItems) {
     previewElement.className = 'item multi-drag-preview';
     previewElement.textContent = `${selectedItems.size} item(s)`;
   }
-  
+
   document.body.appendChild(previewElement);
 
   const rect = event.target.getBoundingClientRect();
