@@ -84,17 +84,35 @@ function createItem(path) {
   const item = document.createElement('div');
   item.className = 'item loading';
 
+  const thumbWrapper = document.createElement('div');
+  thumbWrapper.className = 'thumb-wrapper';
+  thumbWrapper.style.position = 'relative';
+
   const img = document.createElement('img');
   img.loading = 'lazy';
   img.alt = `Image ${filename}`;
   img.className = 'thumb';
   img.draggable = false;
 
+  thumbWrapper.appendChild(img);
+
+  if (isVideoFile(path)) {
+    const indicator = document.createElement('div');
+    indicator.className = 'video-indicator';
+    indicator.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="white" width="16" height="16">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+    `;
+    thumbWrapper.appendChild(indicator);
+    item.classList.add('video');
+  }
+
   const label = document.createElement('div');
   label.className = 'label';
   label.textContent = filename;
 
-  item.appendChild(img);
+  item.appendChild(thumbWrapper);
   item.appendChild(label);
 
   enqueueImageLoad(() => {
@@ -111,6 +129,7 @@ function createItem(path) {
   .catch(err => {
     console.error('Thumbnail load failed for:', path, err);
   });
+
   return item;
 }
 
