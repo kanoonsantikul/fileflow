@@ -287,6 +287,10 @@ function renderGrid(originalPaths) {
     itemMap.set(path, item);
 
     item.addEventListener('mousedown', (event) => {
+      if (event.button !== 0) { // left click
+        return;
+      }
+
       event.preventDefault();
 
       if (event.shiftKey) {
@@ -341,6 +345,15 @@ function renderGrid(originalPaths) {
       window.addEventListener('mousemove', onMouseMoveCheck);
       window.addEventListener('mouseup', onMouseUpCheck);
     });
+  });
+
+  window.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    
+    selectedItems.forEach((element, id) => {
+      itemMap.get(id).classList.remove('selected');
+    });
+    selectedItems.clear();
   });
 
   updateGridMetrics();
