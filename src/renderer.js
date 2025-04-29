@@ -504,6 +504,8 @@ document.getElementById('cancel-rename').addEventListener('click', () => {
 
 document.getElementById('confirm-rename').addEventListener('click', async () => {
   const prefix = document.getElementById('prefix-input').value.trim();
+  const startNumber = parseInt(document.getElementById('start-number-input').value, 10) || 0;
+
   if (!prefix) {
     alert("Please enter a valid prefix.");
     return;
@@ -511,7 +513,7 @@ document.getElementById('confirm-rename').addEventListener('click', async () => 
 
   document.getElementById('rename-modal').classList.add('hidden');
 
-  const result = await window.api.reorderImages(paths, prefix);
+  const result = await window.api.reorderImages(paths, prefix, startNumber);
 
   if (result.success) {
     renderGrid(result.newPaths);

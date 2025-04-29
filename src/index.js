@@ -102,14 +102,14 @@ ipcMain.handle('select-folder', async (_, sortBy) => {
   return files;
 });
 
-ipcMain.handle('reorder-images', async (_, paths, prefix) => {
+ipcMain.handle('reorder-images', async (_, paths, prefix, startNumber = 1) => {
   try {
     const dir = path.dirname(paths[0]);
-    const zeroPad = paths.length.toString().length;
+    const zeroPad = (startNumber + paths.length - 1).toString().length;
     const tempPaths = [];
     const newPaths = [];
 
-    // Step 1: rename to temporary names
+    // Step 1: rename to temporary names to avoid collisions
     for (let i = 0; i < paths.length; i++) {
       const ext = path.extname(paths[i]);
       const tempName = `.temp_${prefix}_${i}${ext}`;
@@ -121,7 +121,8 @@ ipcMain.handle('reorder-images', async (_, paths, prefix) => {
     // Step 2: rename from temp to final names
     for (let i = 0; i < tempPaths.length; i++) {
       const ext = path.extname(tempPaths[i]);
-      const finalName = `${prefix}${String(i + 1).padStart(zeroPad, '0')}${ext}`;
+      const index = String(startNumber + i).padStart(zeroPad, '0');
+      const finalName = `${prefix}${index}${ext}`;
       const finalPath = path.join(dir, finalName);
       fs.renameSync(tempPaths[i], finalPath);
       newPaths.push(finalPath);

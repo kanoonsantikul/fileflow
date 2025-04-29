@@ -190,7 +190,7 @@ html, body {
 /* Item Style */
 .item {
   width: 120px;
-  height: 140px;
+  height: 150px;
   background: #313338;
   border-radius: 10px;
   display: flex;
@@ -388,16 +388,14 @@ body:hover #control-buttons {
 /* Modal Popups */
 .modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  backdrop-filter: blur(4px);
-  background: rgba(0,0,0,0.5);
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  z-index: 2000;
+  animation: modalFadeIn 0.3s ease;
 }
 
 .modal.hidden {
@@ -405,22 +403,86 @@ body:hover #control-buttons {
 }
 
 .modal-content {
-  background: #313338;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 320px;
+  background: #2b2d31;
+  padding: 24px 32px;
+  border-radius: 16px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  box-sizing: border-box;
 }
 
-.modal-content input {
+.modal-content h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.modal-field label {
+  font-size: 14px;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.modal-field input {
   width: 100%;
-  padding: 0.5rem;
-  font-size: 1rem;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  padding: 12px;
+  box-sizing: border-box;
+  background: #202225;
   border: 1px solid #404249;
   border-radius: 8px;
-  background: #202225;
-  color: white;
+  font-size: 16px;
+  color: #ffffff;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.button-group button {
+  flex: 1;
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.button-group .confirm {
+  background: #5865F2;
+  color: #ffffff;
+}
+
+.button-group .confirm:hover {
+  background: #4752c4;
+  transform: scale(1.03);
+}
+
+.button-group .cancel {
+  background: #2f3136;
+  color: #dcddde;
+}
+
+.button-group .cancel:hover {
+  background: #404249;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }

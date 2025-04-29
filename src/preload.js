@@ -5,5 +5,5 @@ contextBridge.exposeInMainWorld('api', {
   maximize: () => ipcRenderer.send('maximize'),
   close: () => ipcRenderer.send('close'),
   selectFolder: (sortBy) => ipcRenderer.invoke('select-folder', sortBy),
-  reorderImages: (paths, prefix) => ipcRenderer.invoke('reorder-images', paths, prefix)
+  reorderImages: (paths, prefix, startNumber) => ipcRenderer.invoke('reorder-images', paths, prefix, startNumber)
 });
