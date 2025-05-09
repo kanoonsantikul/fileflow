@@ -102,34 +102,59 @@ ipcMain.handle('select-folder', async (_, sortBy) => {
   return files;
 });
 
-ipcMain.handle('reorder-images', async (_, paths, prefix, startNumber = 1) => {
-  try {
-    const dir = path.dirname(paths[0]);
-    const zeroPad = (startNumber + paths.length - 1).toString().length;
-    const tempPaths = [];
-    const newPaths = [];
+ipcMain.handle('reorder-images', async (event, paths, prefix, startNumber = 1) => {
+  const dir = path.dirname(paths[0]);
+  const zeroPad = (startNumber + paths.length - 1).toString().length;
+  const tempPaths = [];
+  const newPaths = [];
 
-    // Step 1: rename to temporary names to avoid collisions
-    for (let i = 0; i < paths.length; i++) {
-      const ext = path.extname(paths[i]);
-      const tempName = `.temp_${prefix}_${i}${ext}`;
-      const tempPath = path.join(dir, tempName);
-      fs.renameSync(paths[i], tempPath);
-      tempPaths.push(tempPath);
+  // Step 1: Rename to temporary names to avoid collisions
+  for (let i = 0; i < paths.length; i++) {
+    const ext = path.extname(paths[i]);
+    const index = String(startNumber + i).padStart(zeroPad, '0');
+    const tempName = `.temp_${prefix}_${index}${ext}`;
+    const tempPath = path.join(dir, tempName);
+
+    while (true) {
+      try {
+        fs.renameSync(paths[i], tempPath);
+        tempPaths.push(tempPath);
+        break;
+      } catch (err) {
+        const response = await event.sender.invoke('locked-file-action', path.basename(paths[i]));
+        if (response === 'skip') {
+          break;
+        }
+        if (response === 'cancel') {
+          return { success: false, error: 'Operation cancelled by user.' };
+        }
+      }
     }
-
-    // Step 2: rename from temp to final names
-    for (let i = 0; i < tempPaths.length; i++) {
-      const ext = path.extname(tempPaths[i]);
-      const index = String(startNumber + i).padStart(zeroPad, '0');
-      const finalName = `${prefix}${index}${ext}`;
-      const finalPath = path.join(dir, finalName);
-      fs.renameSync(tempPaths[i], finalPath);
-      newPaths.push(finalPath);
-    }
-
-    return { success: true, newPaths };
-  } catch (error) {
-    return { success: false, error: error.message };
   }
+
+  // Step 2: Rename from temp to final names
+  for (let i = 0; i < tempPaths.length; i++) {
+    const ext = path.extname(tempPaths[i]);
+    const index = String(startNumber + i).padStart(zeroPad, '0');
+    const finalName = `${prefix}${index}${ext}`;
+    const finalPath = path.join(dir, finalName);
+
+    while (true) {
+      try {
+        fs.renameSync(tempPaths[i], finalPath);
+        newPaths.push(finalPath);
+        break;
+      } catch (err) {
+        const response = await event.sender.invoke('locked-file-action', path.basename(tempPaths[i]));
+        if (response === 'skip') {
+          break;
+        }
+        if (response === 'cancel') {
+          return { success: false, error: 'Operation cancelled by user.' };
+        }
+      }
+    }
+  }
+
+  return { success: true, newPaths };
 });

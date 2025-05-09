@@ -526,6 +526,41 @@ document.getElementById('reset-button').addEventListener('click', () => {
   renderGrid([...pathsBackup]);
 });
 
+window.api.onLockedFileAction(async (fileName) => {
+  const userChoice = await showLockedFileModal(fileName);
+  return userChoice;
+});
+
+function showLockedFileModal(fileName) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('locked-file-modal');
+    const message = document.getElementById('locked-file-message');
+    message.textContent = `"${fileName}" is currently open and cannot be renamed.`;
+
+    modal.classList.remove('hidden');
+
+    const skipBtn = document.getElementById('skip-file');
+    const retryBtn = document.getElementById('retry-file');
+    const cancelBtn = document.getElementById('cancel-rename-op');
+
+    function cleanUp(choice) {
+      modal.classList.add('hidden');
+      skipBtn.removeEventListener('click', onSkip);
+      retryBtn.removeEventListener('click', onRetry);
+      cancelBtn.removeEventListener('click', onCancel);
+      resolve(choice);
+    }
+
+    function onSkip() { cleanUp('skip'); }
+    function onRetry() { cleanUp('retry'); }
+    function onCancel() { cleanUp('cancel'); }
+
+    skipBtn.addEventListener('click', onSkip);
+    retryBtn.addEventListener('click', onRetry);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   const minimizeButton = document.getElementById('minimize-btn');
   const maximizeButton = document.getElementById('maximize-btn');

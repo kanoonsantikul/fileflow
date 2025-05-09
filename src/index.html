@@ -78,6 +78,19 @@
     </div>
   </div>
 
+  <div id="locked-file-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>🔒 File In Use</h2>
+      <p id="locked-file-message">"filename.jpg" is currently open and cannot be renamed.</p>
+      <p>What would you like to do?</p>
+      <div class="button-group">
+        <button id="skip-file" class="cancel">Skip</button>
+        <button id="retry-file" class="confirm">Retry</button>
+        <button id="cancel-rename-op" class="cancel">Cancel Rename</button>
+      </div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
 </body>
 </html>
