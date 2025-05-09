@@ -453,9 +453,6 @@ body:hover #control-buttons {
 }
 
 .modal-field {
-  background: #131415;
-  border: 1px solid #333;
-  color: #ddd;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -498,7 +495,7 @@ body:hover #control-buttons {
 }
 
 .button-group .confirm {
-  background: #3e4be0;
+  background: #5865F2;
   color: #ffffff;
 }
 
