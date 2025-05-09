@@ -2,8 +2,8 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  background: #1e2124;
-  color: #dcddde;
+  background: #1a1a1d;
+  color: #e0e0e0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -191,7 +191,8 @@ html, body {
 .item {
   width: 120px;
   height: 160px;
-  background: #313338;
+  background: #222327;
+  border: 1px solid #2e2f33;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -203,7 +204,7 @@ html, body {
   position: absolute;
   padding: 10px;
   box-sizing: border-box;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
   transition: transform 300ms ease, background 0.2s ease;
 }
 
@@ -227,7 +228,8 @@ html, body {
   height: 100%;
   object-fit: cover;
   border-radius: 6px;
-  background: #202225;
+  background: #121212;
+  border: 1px solid #2e2e2e;
 }
 
 .video-indicator {
@@ -253,7 +255,7 @@ html, body {
 .label {
   font-size: 12px;
   text-align: center;
-  color: #b9bbbe;
+  color: #cccccc;
   word-break: break-word;
   line-height: 1.2;
   padding-top: 5px;
@@ -406,9 +408,11 @@ body:hover #control-buttons {
 }
 
 .modal-content {
-  background: #2b2d31;
-  padding: 24px 32px;
+  color: #f0f0f0;
+  background: #1f2023;
+  border: 1px solid #2c2d30;
   border-radius: 16px;
+  padding: 24px 32px;
   width: 400px;
   max-width: 90%;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
@@ -425,6 +429,9 @@ body:hover #control-buttons {
 }
 
 .modal-field {
+  background: #131415;
+  border: 1px solid #333;
+  color: #ddd;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -467,7 +474,7 @@ body:hover #control-buttons {
 }
 
 .button-group .confirm {
-  background: #5865F2;
+  background: #3e4be0;
   color: #ffffff;
 }
 
@@ -477,7 +484,7 @@ body:hover #control-buttons {
 }
 
 .button-group .cancel {
-  background: #2f3136;
+  background: #2b2d30;
   color: #dcddde;
 }
 
