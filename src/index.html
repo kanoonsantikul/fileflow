@@ -51,14 +51,29 @@
     <div class="modal-backdrop"></div>
     <img id="modal-img" src="" alt="Image Preview" />
     <video id="modal-video" controls style="display: none;"></video>
+
+    <div id="image-info">
+      <p id="file-size">File Size: --</p> <!-- Display file size here -->
+      <button id="delete-button" class="button delete-button">Delete</button>
+    </div>
   </div>
 
-<div id="control-buttons" class="hidden">
-  <button id="reorder-button" class="control-button">Reorder</button>
-  <button id="reload-button" class="control-button">
-    <span class="reload-icon">&#x21bb;</span>
-  </button>
-</div>
+  <div id="confirm-delete-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Are you sure you want to delete this file?</h2>
+      <div class="button-group">
+        <button id="cancel-delete" class="cancel">Cancel</button>
+        <button id="confirm-delete" class="confirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="control-buttons" class="hidden">
+    <button id="reorder-button" class="control-button">Reorder</button>
+    <button id="reload-button" class="control-button">
+      <span class="reload-icon">&#x21bb;</span>
+    </button>
+  </div>
 
   <div id="rename-modal" class="modal hidden">
     <div class="modal-content">

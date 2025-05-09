@@ -8,10 +8,11 @@ let itemWidth = 0;
 let itemHeight = 0;
 
 let paths;
-let pathsBackup;
 const itemMap = new Map();
 const selectedItems = new Set();
 const thumbURLMap = new Map();
+
+let currentImagePath = null;
 
 let draggedIndex = null;
 let lastTargetIndex = null;
@@ -144,21 +145,40 @@ function openFullMedia(path) {
   const modal = document.getElementById('image-modal');
   const modalImg = document.getElementById('modal-img');
   const modalVideo = document.getElementById('modal-video');
-  
+  const sizeDisplay = document.getElementById('file-size');
+
+  currentImagePath = path;
+
+  window.api.getFileSize(path).then(size => {
+    if (size) {
+      sizeDisplay.textContent = `File Size: ${formatBytes(size)}`;
+    } else {
+      sizeDisplay.textContent = `File Size: --`;
+    }
+  });
+
   if (isVideoFile(path)) {
     modalImg.style.display = 'none';
     modalVideo.style.display = 'block';
-    
+
     modalVideo.src = `file://${path}`;
     modalVideo.play();
   } else {
     modalImg.style.display = 'block';
     modalVideo.style.display = 'none';
-    
+
     modalImg.src = `file://${path}`;
   }
 
   modal.classList.remove('hidden');
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 document.getElementById('image-modal').addEventListener('click', (e) => {
@@ -172,6 +192,8 @@ document.getElementById('image-modal').addEventListener('click', (e) => {
       modalVideo.src = '';
     }
     modalImg.src = '';
+
+    currentImagePath = null;
     
     modal.classList.add('hidden');
   }
@@ -267,7 +289,6 @@ function onMouseUp() {
 
 function renderGrid(originalPaths) {
   paths = originalPaths;
-  pathsBackup = [...paths];
   itemMap.clear();
   grid.innerHTML = '';
 
@@ -285,6 +306,7 @@ function renderGrid(originalPaths) {
 
   paths.forEach((path, index) => {
     const item = createItem(path);
+    item.setAttribute('data-path', path)
     grid.appendChild(item);
     itemMap.set(path, item);
 
@@ -471,7 +493,6 @@ async function loadFolder(folderPath, originalPaths) {
   }
 
   lastFolderPath = folderPath;
-  console.log(lastFolderPath);
 
   const folderName = folderPath.split(/[\\/]/).pop();
   const itemCount = originalPaths.length;
@@ -594,6 +615,62 @@ function showLockedFileModal(fileName) {
     retryBtn.addEventListener('click', onRetry);
     cancelBtn.addEventListener('click', onCancel);
   });
+}
+
+document.getElementById('delete-button').addEventListener('click', () => {
+  document.getElementById('confirm-delete-modal').classList.remove('hidden');
+});
+
+document.getElementById('confirm-delete').addEventListener('click', async () => {
+  if (!currentImagePath) {
+    console.error("Error deleting file: current image path null");
+    return;
+  }
+
+  try {
+    await window.api.deleteFile(currentImagePath);
+    removeDeletedItem(currentImagePath);
+    closeImageModal();
+    currentImagePath = null;
+  } catch (err) {
+    console.error("Error deleting file", err);
+    alert("Failed to delete file.");
+  }
+
+  document.getElementById('confirm-delete-modal').classList.add('hidden');
+});
+
+function removeDeletedItem(filePath) {
+  paths = paths.filter(p => p !== filePath);
+  selectedItems.delete(filePath);
+  itemMap.delete(filePath);
+
+  const thumbURL = thumbURLMap.get(filePath);
+  if (thumbURL) {
+    URL.revokeObjectURL(thumbURL);
+    thumbURLMap.delete(filePath);
+  }
+
+  const itemEl = document.querySelector(`.item[data-path="${filePath}"]`);
+  if (itemEl) {
+    itemEl.remove();
+  } else {
+    console.error(`Not found item: ${filePath}`);
+  }
+
+  updateGridMetrics();
+  updateItemsPosition();
+}
+
+document.getElementById('cancel-delete').addEventListener('click', () => {
+  document.getElementById('confirm-delete-modal').classList.add('hidden');
+});
+
+function closeImageModal() {
+  document.getElementById('confirm-delete-modal').classList.add('hidden');
+  document.getElementById('image-modal').classList.add('hidden');
+  document.getElementById('modal-img').style.display = 'none';
+  document.getElementById('modal-video').style.display = 'none';
 }
 
 document.addEventListener('DOMContentLoaded', function() {

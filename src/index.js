@@ -101,7 +101,6 @@ function sortFiles(filePaths, sortOption) {
   return filePaths.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 }
 
-
 ipcMain.handle('select-folder', async (_, sortOption) => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ['openDirectory']
@@ -117,6 +116,20 @@ ipcMain.handle('select-folder', async (_, sortOption) => {
 
 ipcMain.handle('read-folder', async (_, folderPath, sortOption) => {
   return getSortedFiles(folderPath, sortOption);
+});
+
+ipcMain.handle('get-file-size', async (_, filePath) => {
+  try {
+    const stats = fs.statSync(filePath);
+    return stats.size;
+  } catch (err) {
+    console.error('Failed to get file size:', err);
+    return null;
+  }
+});
+
+ipcMain.handle('delete-file', async (_, filePath) => {
+  fs.unlinkSync(filePath);
 });
 
 ipcMain.handle('reorder-images', async (event, paths, prefix, startNumber = 1) => {
