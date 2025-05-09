@@ -472,6 +472,15 @@ document.getElementById('select-folder-button').addEventListener('click', async 
       return;
     }
 
+    const fullPath = originalPaths[0];
+    const folderName = fullPath.split(/[\\/]/).slice(-2, -1)[0]; // gets parent folder name
+    const itemCount = originalPaths.length;
+
+    const folderInfo = document.getElementById('folder-info');
+    if (folderInfo) {
+      folderInfo.textContent = `– ${folderName} (${itemCount} items)`;
+    }
+
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('scroll-wrapper').classList.remove('hidden');
     document.getElementById('control-buttons').classList.remove('hidden');

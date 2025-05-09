@@ -40,6 +40,13 @@ html, body {
   font-size: 14px;
 }
 
+#folder-info {
+  margin-left: 12px;
+  font-size: 14px;
+  color: #b9bbbe;
+  opacity: 0.8;
+}
+
 #title-buttons {
   position: absolute;
   right: 10px;
