@@ -72,7 +72,37 @@ ipcMain.on('close', () => {
   window.close();
 });
 
-ipcMain.handle('select-folder', async (_, sortBy) => {
+function isSupportedFile(filePath) {
+  return /\.(jpe?g|png|webp|gif|mp4|mov|avi|mkv|webm)$/i.test(filePath);
+}
+
+function getSortedFiles(folderPath, sortOption) {
+  let files = fs.readdirSync(folderPath)
+    .filter(isSupportedFile)
+    .map(file => path.join(folderPath, file));
+
+  return sortFiles(files, sortOption);
+}
+
+function sortFiles(filePaths, sortOption) {
+  if (sortOption === 'created') {
+    return filePaths.sort((a, b) => {
+      const statA = fs.statSync(a);
+      const statB = fs.statSync(b);
+
+      const timeA = statA.birthtimeMs > 0 ? statA.birthtimeMs : statA.mtimeMs;
+      const timeB = statB.birthtimeMs > 0 ? statB.birthtimeMs : statB.mtimeMs;
+
+      return timeA - timeB;
+    });
+  }
+
+  // Default: sort by filename
+  return filePaths.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+}
+
+
+ipcMain.handle('select-folder', async (_, sortOption) => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ['openDirectory']
   });
@@ -81,25 +111,12 @@ ipcMain.handle('select-folder', async (_, sortBy) => {
     return [];
   }
 
-  const folder = filePaths[0];
+  const folderPath = filePaths[0];
+  return getSortedFiles(folderPath, sortOption);
+});
 
-  let files = fs.readdirSync(folder)
-    .filter(file => /\.(jpe?g|png|webp|gif|mp4|mov|avi|mkv|webm)$/i.test(file))
-    .map(file => path.join(folder, file));
-
-  if (sortBy === 'created') {
-    files = files.sort((a, b) => {
-      const statA = fs.statSync(a);
-      const statB = fs.statSync(b);
-  
-      const timeA = statA.birthtimeMs > 0 ? statA.birthtimeMs : statA.mtimeMs;
-      const timeB = statB.birthtimeMs > 0 ? statB.birthtimeMs : statB.mtimeMs;
-  
-      return timeA - timeB;
-    });
-  }
-
-  return files;
+ipcMain.handle('read-folder', async (_, folderPath, sortOption) => {
+  return getSortedFiles(folderPath, sortOption);
 });
 
 ipcMain.handle('reorder-images', async (event, paths, prefix, startNumber = 1) => {

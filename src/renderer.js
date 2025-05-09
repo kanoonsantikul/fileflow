@@ -1,5 +1,7 @@
 'use strict'
 
+let lastFolderPath = null;
+
 const grid = document.getElementById('grid');
 let cols = 0;
 let itemWidth = 0;
@@ -462,30 +464,42 @@ async function resizeVideoFirstFrame(filePath, maxSize = 150) {
   });
 }
 
+async function loadFolder(folderPath, originalPaths) {
+  if (!originalPaths || originalPaths.length === 0) {
+    alert("No image or video files found.");
+    return;
+  }
+
+  lastFolderPath = folderPath;
+  console.log(lastFolderPath);
+
+  const folderName = folderPath.split(/[\\/]/).pop();
+  const itemCount = originalPaths.length;
+
+  const folderInfo = document.getElementById('folder-info');
+  if (folderInfo) {
+    folderInfo.textContent = `– ${folderName} (${itemCount} items)`;
+  }
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('scroll-wrapper').classList.remove('hidden');
+  document.getElementById('control-buttons').classList.remove('hidden');
+
+  renderGrid(originalPaths);
+}
+
 document.getElementById('select-folder-button').addEventListener('click', async () => {
   try {
     const sortOption = document.getElementById('sort-options').value;
     const originalPaths = await window.api.selectFolder(sortOption);
 
     if (!originalPaths || originalPaths.length === 0) {
-      alert("No image files found.");
+      alert("No image or video files found.");
       return;
     }
 
-    const fullPath = originalPaths[0];
-    const folderName = fullPath.split(/[\\/]/).slice(-2, -1)[0]; // gets parent folder name
-    const itemCount = originalPaths.length;
-
-    const folderInfo = document.getElementById('folder-info');
-    if (folderInfo) {
-      folderInfo.textContent = `– ${folderName} (${itemCount} items)`;
-    }
-
-    document.getElementById('start-screen').style.display = 'none';
-    document.getElementById('scroll-wrapper').classList.remove('hidden');
-    document.getElementById('control-buttons').classList.remove('hidden');
-
-    renderGrid(originalPaths);
+    const folderPath = originalPaths[0].split(/[\\/]/).slice(0, -1).join('/');
+    await loadFolder(folderPath, originalPaths);
   } catch (err) {
     console.error("Error selecting folder", err);
   }
@@ -531,8 +545,20 @@ document.getElementById('confirm-rename').addEventListener('click', async () => 
   }
 });
 
-document.getElementById('reset-button').addEventListener('click', () => {
-  renderGrid([...pathsBackup]);
+document.getElementById('reload-button').addEventListener('click', async () => {
+  if (!lastFolderPath) {
+    alert("No folder selected yet.");
+    return;
+  }
+
+  try {
+    const sortOption = document.getElementById('sort-options').value;
+    const originalPaths = await window.api.readFolder(lastFolderPath, sortOption);
+    await loadFolder(lastFolderPath, originalPaths);
+  } catch (err) {
+    console.error("Error reloading folder", err);
+    alert("Failed to reload folder.");
+  }
 });
 
 window.api.onLockedFileAction(async (fileName) => {

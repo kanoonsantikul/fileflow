@@ -387,14 +387,31 @@ body:hover #control-buttons {
   background-color: #4752c4;
 }
 
-#reset-button {
-  font-weight: 600;
-  background-color: #992d2d;
+#reload-button {
+  background-color: #6d6d74; /* Beautiful blue background */
+  border: none;
+  border-radius: 50%;
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s, transform 0.2s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-#reset-button:hover {
-  font-weight: 600;
-  background-color: #b23636;
+#reload-button .reload-icon {
+  font-size: 18px;
+  color: #ffffff; /* White color for the icon */
+}
+
+#reload-button:hover {
+  background-color: #4752c4; /* Darker blue on hover */
+  transform: scale(1.1); /* Subtle enlarge effect on hover */
+}
+
+#reload-button:active {
+  transform: scale(1); /* No scaling when button is pressed */
 }
 
 /* Modal Popups */
