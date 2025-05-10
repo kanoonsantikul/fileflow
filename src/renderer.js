@@ -221,8 +221,8 @@ function closeFullMedia() {
   modal.classList.add('hidden');
 }
 
-document.getElementById('image-modal').addEventListener('click', (e) => {
-  if (e.target.id === 'image-modal' || e.target.classList.contains('modal-backdrop')) {
+document.getElementById('image-modal').addEventListener('click', (event) => {
+  if (event.target.id === 'image-modal' || event.target.classList.contains('modal-backdrop')) {
     closeFullMedia();
   }
 });
@@ -328,9 +328,11 @@ function updateFolderInfo() {
 async function renderGrid(originalPaths) {
   await flushImageLoadQueue();
 
-  paths = originalPaths;
-  itemMap.clear();
   grid.innerHTML = '';
+
+  paths = originalPaths;
+  selectedItems.clear();
+  itemMap.clear();
 
   // Cleanup all old blob URLs before re-rendering
   for (const url of thumbURLMap.values()) {
@@ -525,8 +527,8 @@ async function resizeVideoFirstFrame(filePath, maxSize = 150) {
       });
     });
 
-    video.addEventListener('error', (e) => {
-      reject(new Error('Failed to load video: ' + e.message));
+    video.addEventListener('error', (event) => {
+      reject(new Error('Failed to load video: ' + event.message));
     });
   });
 }
@@ -541,7 +543,7 @@ document.getElementById('select-folder-button').addEventListener('click', async 
       return;
     }
 
-    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('scroll-wrapper').classList.remove('hidden');
     document.getElementById('control-buttons').classList.remove('hidden');
 
@@ -643,6 +645,16 @@ function showLockedFileModal(fileName) {
   });
 }
 
+document.getElementById('title-center').addEventListener('click', () => {
+  document.getElementById('start-screen').classList.remove('hidden');
+});
+
+document.getElementById('start-screen').addEventListener('click', (event) => {
+  if (event.target.id == 'start-screen' && paths.length > 0) {
+    document.getElementById('start-screen').classList.add('hidden');
+  }
+})
+
 document.getElementById('delete-button').addEventListener('click', () => {
   document.getElementById('confirm-delete-modal').classList.remove('hidden');
 });
@@ -672,8 +684,8 @@ document.getElementById('confirm-delete').addEventListener('click', async () => 
 
 function removeDeletedItem(deletePath) {
   paths = paths.filter(p => p !== deletePath);
-  selectedItems.delete(deletePath);
   itemMap.delete(deletePath);
+  selectedItems.delete(deletePath);
 
   const thumbURL = thumbURLMap.get(deletePath);
   if (thumbURL) {
