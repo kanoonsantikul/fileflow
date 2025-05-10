@@ -5,7 +5,7 @@
 html, body {
   height: 100%;
   margin: 0;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'Arial';
   background: #1a1a1d;
   color: #e0e0e0;
   overflow: hidden;
@@ -33,6 +33,10 @@ html, body {
   align-items: center;
   -webkit-app-region: no-drag;
   cursor: pointer;
+}
+
+#title-center:hover {
+  transform: scale(1.05);
 }
 
 #app-icon {
@@ -133,40 +137,12 @@ html, body {
   font-size: 16px;
 }
 
-#select-folder-button, #confirm-rename {
+#select-folder-button {
   padding: 12px 24px;
-  font-size: 15px;
-  font-weight: 600;
   border: none;
   border-radius: 8px;
-  background: #5865F2;
-  color: #ffffff;
-  cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
   margin-top: 10px;
-}
-
-#select-folder-button:hover, #confirm-rename:hover {
-  background: #4752c4;
-  transform: scale(1.03);
-}
-
-/* Cancel Button */
-#cancel-rename {
-  padding: 12px 24px;
-  font-size: 15px;
-  font-weight: 500;
-  border: none;
-  border-radius: 8px;
-  background: #2f3136;
-  color: #dcddde;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  margin-top: 10px;
-}
-
-#cancel-rename:hover {
-  background: #404249;
 }
 
 #sort-options {
@@ -350,7 +326,6 @@ html, body {
   justify-content: space-between;
   align-items: center;
   color: #fff;
-  font-family: Arial, sans-serif;
   z-index: 2100;
   box-sizing: border-box;
 }
@@ -362,92 +337,80 @@ html, body {
 
 #image-info #delete-button {
   padding: 8px 16px;
-  background-color: #f44336;
-  color: white;
   border: none;
   border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
   transition: background-color 0.3s ease;
-}
-
-#image-info #delete-button:hover {
-  background-color: #d32f2f;
 }
 
 /* Control Buttons (Bottom Bar) */
 #control-buttons {
   position: fixed;
-  bottom: 20px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 12px;
-  background: rgba(49, 51, 56, 0.9);
-  padding: 10px 16px;
+  padding: 10px 14px;
+  background: rgba(28, 30, 34, 0.85);
+  backdrop-filter: blur(10px);
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 1001;
-  transition: opacity 0.3s ease;
   opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 body:hover #control-buttons {
   opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
 }
 
 .control-button {
-  background: #3a3c41;
-  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease;
+  border-radius: 10px;
+  padding: 10px 16px;
+  transition: background 0.3s ease, transform 0.2s ease;
 }
 
-.control-button:hover {
-  background: #4b4d52;
+.control-button .icon {
+  width: 20px;
+  height: 20px;
+  stroke: white;
+}
+
+.themed-button, .critical-button, .gray-button {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+}
+
+.themed-button:hover, .critical-button:hover, .gray-button:hover {
   transform: scale(1.05);
 }
 
-#reorder-button {
-  font-weight: 600;
-  background-color: #5865F2;
+.themed-button {
+  background: #5865F2;
+}
+.themed-button:hover {
+  background: #4752c4;
 }
 
-#reorder-button:hover {
-  font-weight: 600;
-  background-color: #4752c4;
+.critical-button {
+  background: #f44336;
+}
+.critical-button:hover {
+  background: #d32f2f;
 }
 
-#reload-button {
-  background-color: #6d6d74; /* Beautiful blue background */
-  border: none;
-  border-radius: 50%;
-  padding: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.3s, transform 0.2s;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+.gray-button {
+  background: #2f3136;
 }
-
-#reload-button .reload-icon {
-  font-size: 18px;
-  color: #ffffff; /* White color for the icon */
-}
-
-#reload-button:hover {
-  background-color: #4752c4; /* Darker blue on hover */
-  transform: scale(1.1); /* Subtle enlarge effect on hover */
-}
-
-#reload-button:active {
-  transform: scale(1); /* No scaling when button is pressed */
+.gray-button:hover {
+  background: #404249;
 }
 
 /* Modal Popups */
@@ -476,9 +439,9 @@ body:hover #control-buttons {
   box-sizing: border-box;
 }
 
-.modal-content h2 {
+.modal-content h3 {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 400;
   margin-bottom: 24px;
   color: #ffffff;
   text-align: center;
@@ -511,38 +474,16 @@ body:hover #control-buttons {
 .button-group {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: 24px;
   margin-top: 10px;
 }
 
 .button-group button {
   flex: 1;
   padding: 12px 0;
-  font-size: 15px;
-  font-weight: 600;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.button-group .confirm {
-  background: #5865F2;
-  color: #ffffff;
-}
-
-.button-group .confirm:hover {
-  background: #4752c4;
-  transform: scale(1.03);
-}
-
-.button-group .cancel {
-  background: #2b2d30;
-  color: #dcddde;
-}
-
-.button-group .cancel:hover {
-  background: #404249;
 }
 
 @keyframes modalFadeIn {
