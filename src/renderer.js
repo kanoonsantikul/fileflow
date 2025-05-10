@@ -181,21 +181,26 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+function closeFullMedia() {
+  const modal = document.getElementById('image-modal');
+  const modalImg = document.getElementById('modal-img');
+  const modalVideo = document.getElementById('modal-video');
+
+  if (modalVideo.src) {
+    modalVideo.pause();
+    modalVideo.removeAttribute('src');
+    modalVideo.load();
+  }
+  modalImg.removeAttribute('src');
+
+  currentImagePath = null;
+
+  modal.classList.add('hidden');
+}
+
 document.getElementById('image-modal').addEventListener('click', (e) => {
   if (e.target.id === 'image-modal' || e.target.classList.contains('modal-backdrop')) {
-    const modal = document.getElementById('image-modal');
-    const modalImg = document.getElementById('modal-img');
-    const modalVideo = document.getElementById('modal-video');
-    
-    if (modalVideo.src) {
-      modalVideo.pause();
-      modalVideo.src = '';
-    }
-    modalImg.src = '';
-
-    currentImagePath = null;
-    
-    modal.classList.add('hidden');
+    closeFullMedia();
   }
 });
 
@@ -476,6 +481,10 @@ async function resizeVideoFirstFrame(filePath, maxSize = 150) {
           const newURL = URL.createObjectURL(blob);
           thumbURLMap.set(filePath, newURL);
           resolve(newURL);
+
+          video.pause();
+          video.removeAttribute('src');
+          video.load();
         }, 'image/jpeg', 0.85);
       });
     });
@@ -622,16 +631,20 @@ document.getElementById('delete-button').addEventListener('click', () => {
 });
 
 document.getElementById('confirm-delete').addEventListener('click', async () => {
-  if (!currentImagePath) {
+  const deletePath = currentImagePath;
+  console.log(`Deleting file: ${deletePath}`);
+  
+  if (!deletePath) {
     console.error("Error deleting file: current image path null");
     return;
   }
 
+  document.getElementById('confirm-delete-modal').classList.add('hidden');
   try {
-    await window.api.deleteFile(currentImagePath);
-    removeDeletedItem(currentImagePath);
-    closeImageModal();
-    currentImagePath = null;
+    await window.api.deleteFile(deletePath);
+  
+    closeFullMedia();
+    removeDeletedItem(deletePath);
   } catch (err) {
     console.error("Error deleting file", err);
     alert("Failed to delete file.");
@@ -640,22 +653,22 @@ document.getElementById('confirm-delete').addEventListener('click', async () => 
   document.getElementById('confirm-delete-modal').classList.add('hidden');
 });
 
-function removeDeletedItem(filePath) {
-  paths = paths.filter(p => p !== filePath);
-  selectedItems.delete(filePath);
-  itemMap.delete(filePath);
+function removeDeletedItem(deletePath) {
+  paths = paths.filter(p => p !== deletePath);
+  selectedItems.delete(deletePath);
+  itemMap.delete(deletePath);
 
-  const thumbURL = thumbURLMap.get(filePath);
+  const thumbURL = thumbURLMap.get(deletePath);
   if (thumbURL) {
     URL.revokeObjectURL(thumbURL);
-    thumbURLMap.delete(filePath);
+    thumbURLMap.delete(deletePath);
   }
 
-  const itemEl = document.querySelector(`.item[data-path="${filePath}"]`);
-  if (itemEl) {
-    itemEl.remove();
+  const itemElement = document.querySelector(`.item[data-path="${deletePath}"]`);
+  if (itemElement) {
+    itemElement.remove();
   } else {
-    console.error(`Not found item: ${filePath}`);
+    console.error(`Not found item: ${deletePath}`);
   }
 
   updateGridMetrics();
@@ -665,13 +678,6 @@ function removeDeletedItem(filePath) {
 document.getElementById('cancel-delete').addEventListener('click', () => {
   document.getElementById('confirm-delete-modal').classList.add('hidden');
 });
-
-function closeImageModal() {
-  document.getElementById('confirm-delete-modal').classList.add('hidden');
-  document.getElementById('image-modal').classList.add('hidden');
-  document.getElementById('modal-img').style.display = 'none';
-  document.getElementById('modal-video').style.display = 'none';
-}
 
 document.addEventListener('DOMContentLoaded', function() {
   const minimizeButton = document.getElementById('minimize-btn');
