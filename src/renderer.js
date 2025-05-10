@@ -650,7 +650,7 @@ document.getElementById('title-center').addEventListener('click', () => {
 });
 
 document.getElementById('start-screen').addEventListener('click', (event) => {
-  if (event.target.id == 'start-screen' && paths.length > 0) {
+  if (event.target.id == 'start-screen' && paths?.length > 0) {
     document.getElementById('start-screen').classList.add('hidden');
   }
 })
