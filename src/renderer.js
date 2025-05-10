@@ -67,7 +67,7 @@ async function flushImageLoadQueue() {
 
   // Wait until no active tasks and queue is empty
   while (activeLoads > 0 || loadQueue.length > 0) {
-    console.log(`activeLoads:${activeLoads}, loadQueue size:${loadFolder.length}`);
+    console.log(`activeLoads:${activeLoads}, loadQueue size:${loadQueue.length}`);
     await new Promise(resolve => setTimeout(resolve, 50));
   }
 
@@ -315,6 +315,16 @@ function onMouseUp() {
   window.removeEventListener('mouseup', onMouseUp);
 }
 
+function updateFolderInfo() {
+  const folderName = lastFolderPath.split(/[\\/]/).pop();
+  const itemCount = paths.length;
+
+  const folderInfo = document.getElementById('folder-info');
+  if (folderInfo) {
+    folderInfo.textContent = `– ${folderName} (${itemCount} items)`;
+  }
+}
+
 async function renderGrid(originalPaths) {
   await flushImageLoadQueue();
 
@@ -322,7 +332,7 @@ async function renderGrid(originalPaths) {
   itemMap.clear();
   grid.innerHTML = '';
 
-  // 🔥 Cleanup all old blob URLs before re-rendering
+  // Cleanup all old blob URLs before re-rendering
   for (const url of thumbURLMap.values()) {
     URL.revokeObjectURL(url);
   }
@@ -334,6 +344,7 @@ async function renderGrid(originalPaths) {
   });
   observer.observe(grid);
 
+  updateFolderInfo();
   paths.forEach((path, index) => {
     const item = createItem(path);
     item.setAttribute('data-path', path);
@@ -520,29 +531,6 @@ async function resizeVideoFirstFrame(filePath, maxSize = 150) {
   });
 }
 
-async function loadFolder(folderPath, originalPaths) {
-  if (!originalPaths || originalPaths.length === 0) {
-    alert("No image or video files found.");
-    return;
-  }
-
-  lastFolderPath = folderPath;
-
-  const folderName = folderPath.split(/[\\/]/).pop();
-  const itemCount = originalPaths.length;
-
-  const folderInfo = document.getElementById('folder-info');
-  if (folderInfo) {
-    folderInfo.textContent = `– ${folderName} (${itemCount} items)`;
-  }
-
-  document.getElementById('start-screen').style.display = 'none';
-  document.getElementById('scroll-wrapper').classList.remove('hidden');
-  document.getElementById('control-buttons').classList.remove('hidden');
-
-  renderGrid(originalPaths);
-}
-
 document.getElementById('select-folder-button').addEventListener('click', async () => {
   try {
     const sortOption = document.getElementById('sort-options').value;
@@ -553,8 +541,12 @@ document.getElementById('select-folder-button').addEventListener('click', async 
       return;
     }
 
-    const folderPath = originalPaths[0].split(/[\\/]/).slice(0, -1).join('/');
-    await loadFolder(folderPath, originalPaths);
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('scroll-wrapper').classList.remove('hidden');
+    document.getElementById('control-buttons').classList.remove('hidden');
+
+    lastFolderPath = originalPaths[0].split(/[\\/]/).slice(0, -1).join('/');
+    renderGrid(originalPaths);
   } catch (err) {
     console.error("Error selecting folder", err);
   }
@@ -609,7 +601,7 @@ document.getElementById('reload-button').addEventListener('click', async () => {
   try {
     const sortOption = document.getElementById('sort-options').value;
     const originalPaths = await window.api.readFolder(lastFolderPath, sortOption);
-    await loadFolder(lastFolderPath, originalPaths);
+    renderGrid(originalPaths);
   } catch (err) {
     console.error("Error reloading folder", err);
     alert("Failed to reload folder.");
@@ -696,6 +688,7 @@ function removeDeletedItem(deletePath) {
     console.error(`Not found item: ${deletePath}`);
   }
 
+  updateFolderInfo();
   updateGridMetrics();
   updateItemsPosition();
 }
