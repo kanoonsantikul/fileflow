@@ -129,7 +129,23 @@ ipcMain.handle('get-file-size', async (_, filePath) => {
 });
 
 ipcMain.handle('delete-file', async (_, filePath) => {
-  fs.unlinkSync(filePath);
+  const maxRetries = 20;
+  const delay = 300;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      fs.unlinkSync(filePath);
+      return true;
+    } catch (err) {
+      if (['EBUSY', 'EPERM', 'EACCES'].includes(err.code)) {
+        console.warn(`Attempt ${attempt}/${maxRetries} failed: file locked — retrying in ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw err; // Non-lock error, propagate
+      }
+    }
+  }
+  throw new Error(`File remained locked after ${maxRetries} attempts: ${filePath}`);
 });
 
 ipcMain.handle('reorder-images', async (event, paths, prefix, startNumber = 1) => {

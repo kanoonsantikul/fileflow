@@ -658,17 +658,17 @@ document.getElementById('delete-button').addEventListener('click', () => {
 document.getElementById('confirm-delete').addEventListener('click', async () => {
   const deletePath = currentImagePath;
   console.log(`Deleting file: ${deletePath}`);
-  
+
   if (!deletePath) {
     console.error("Error deleting file: current image path null");
     return;
   }
 
   document.getElementById('confirm-delete-modal').classList.add('hidden');
+  closeFullMedia();
+
   try {
     await window.api.deleteFile(deletePath);
-  
-    closeFullMedia();
     removeDeletedItem(deletePath);
   } catch (err) {
     console.error("Error deleting file", err);
@@ -689,7 +689,7 @@ function removeDeletedItem(deletePath) {
     thumbURLMap.delete(deletePath);
   }
 
-  const itemElement = document.querySelector(`.item[data-path="${deletePath}"]`);
+  const itemElement = document.querySelector(`.item[data-path="${CSS.escape(deletePath)}"]`);
   if (itemElement) {
     itemElement.remove();
   } else {
