@@ -26,11 +26,17 @@ const SCROLL_MARGIN = 60;
 const SCROLL_SPEED = 20;
 
 const MAX_CONCURRENT = 50;
+let allowEnqueue = true;
 let activeLoads = 0;
 const loadQueue = [];
 
 function enqueueImageLoad(task) {
   return new Promise((resolve, reject) => {
+    if (!allowEnqueue) {
+      // Skip or immediately resolve to prevent queuing during rerender
+      return resolve(null);
+    }
+
     const wrappedTask = async () => {
       try {
         activeLoads++;
@@ -53,6 +59,23 @@ function enqueueImageLoad(task) {
       loadQueue.push(wrappedTask);
     }
   });
+}
+
+async function flushImageLoadQueue() {
+  // Prevent any new enqueues
+  allowEnqueue = false;
+
+  // Wait until no active tasks and queue is empty
+  while (activeLoads > 0 || loadQueue.length > 0) {
+    console.log(`activeLoads:${activeLoads}, loadQueue size:${loadFolder.length}`);
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+
+  // Clear queue (if anything was added just before allowEnqueue flipped)
+  loadQueue.length = 0;
+
+  // Re-enable enqueue
+  allowEnqueue = true;
 }
 
 function getFileName(filePath) {
@@ -292,7 +315,9 @@ function onMouseUp() {
   window.removeEventListener('mouseup', onMouseUp);
 }
 
-function renderGrid(originalPaths) {
+async function renderGrid(originalPaths) {
+  await flushImageLoadQueue();
+
   paths = originalPaths;
   itemMap.clear();
   grid.innerHTML = '';
@@ -311,7 +336,7 @@ function renderGrid(originalPaths) {
 
   paths.forEach((path, index) => {
     const item = createItem(path);
-    item.setAttribute('data-path', path)
+    item.setAttribute('data-path', path);
     grid.appendChild(item);
     itemMap.set(path, item);
 
@@ -346,7 +371,7 @@ function renderGrid(originalPaths) {
 
           // Select one item
           if (!selectedItems.has(path)) {
-            selectedItems.forEach((element, id) => {
+            selectedItems.forEach((_, id) => {
               itemMap.get(id).classList.remove('selected');
             });
             selectedItems.clear();
@@ -367,7 +392,7 @@ function renderGrid(originalPaths) {
         window.removeEventListener('mouseup', onMouseUpCheck);
 
         if (!moved) {
-          openFullMedia(path); // ✅ Only opens if no movement and no shift
+          openFullMedia(path); //Only opens if no movement and no shift
         }
       };
 
@@ -378,8 +403,8 @@ function renderGrid(originalPaths) {
 
   window.addEventListener('contextmenu', (event) => {
     event.preventDefault();
-    
-    selectedItems.forEach((element, id) => {
+
+    selectedItems.forEach((_, id) => {
       itemMap.get(id).classList.remove('selected');
     });
     selectedItems.clear();
