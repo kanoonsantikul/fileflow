@@ -489,46 +489,82 @@ async function resizeImage(filePath, maxSize = 150) {
 }
 
 async function resizeVideoFirstFrame(filePath, maxSize = 150) {
+  const MAX_SEEK_ATTEMPTS = 50;     // safety cap (e.g., 5 s if we step 0.1 s)
+  const SEEK_STEP = 0.1;            // seconds to jump each time
+  const BLACK_THRESHOLD = 0.8;     // 95 % pixels dark → treat as black
+  const LUMA_CUTOFF = 15;           // 0-255 luma considered “dark”
+
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
     video.muted = true;
     video.src = `file://${filePath}?v=${Date.now()}`;
 
-    // Ensure video metadata is loaded
+    let attempts = 0;
+
     video.addEventListener('loadedmetadata', () => {
-      video.currentTime = 0;  // Move to the first frame
+      // Start at first frame
+      video.currentTime = 0;
+    });
 
-      // Wait until the first frame is available
-      video.addEventListener('seeked', () => {
-        // Scale the video frame to fit maxSize
-        const scale = Math.min(maxSize / video.videoWidth, maxSize / video.videoHeight, 1);
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth * scale;
-        canvas.height = video.videoHeight * scale;
+    video.addEventListener('seeked', () => {
+      // Draw current frame to canvas
+      const scale = Math.min(
+        maxSize / video.videoWidth,
+        maxSize / video.videoHeight,
+        1
+      );
+      const canvas = document.createElement('canvas');
+      canvas.width  = video.videoWidth  * scale;
+      canvas.height = video.videoHeight * scale;
 
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Convert canvas to blob and create object URL
+      // Quick black-frame test
+      const frameData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let darkPixels = 0;
+      for (let i = 0; i < frameData.length; i += 4) {
+        const r = frameData[i];
+        const g = frameData[i + 1];
+        const b = frameData[i + 2];
+        // simple luma approximation
+        const y = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (y < LUMA_CUTOFF) darkPixels++;
+      }
+      const darkRatio = darkPixels / (frameData.length / 4);
+
+      // If not mostly black OR out of attempts → accept this frame
+      if (darkRatio < BLACK_THRESHOLD || attempts >= MAX_SEEK_ATTEMPTS) {
         canvas.toBlob(blob => {
           if (thumbURLMap.has(filePath)) {
             URL.revokeObjectURL(thumbURLMap.get(filePath));
           }
-
           const newURL = URL.createObjectURL(blob);
           thumbURLMap.set(filePath, newURL);
           resolve(newURL);
 
+          // Clean up
           video.pause();
           video.removeAttribute('src');
           video.load();
         }, 'image/jpeg', 0.85);
-      });
+      } else {
+        // Seek to next step and test again
+        attempts++;
+        const nextTime = video.currentTime + SEEK_STEP;
+        if (nextTime < video.duration) {
+          video.currentTime = nextTime;
+        } else {
+          // End reached, accept last (still black) frame
+          attempts = MAX_SEEK_ATTEMPTS; // force accept next iteration
+          video.currentTime = video.duration; // triggers seeked again
+        }
+      }
     });
 
-    video.addEventListener('error', (event) => {
-      reject(new Error('Failed to load video: ' + event.message));
+    video.addEventListener('error', (e) => {
+      reject(new Error('Failed to load video: ' + e.message));
     });
   });
 }
