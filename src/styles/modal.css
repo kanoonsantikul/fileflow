@@ -1,0 +1,117 @@
+#image-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+#image-modal img, #modal-video {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 10px;
+  background: #202225;
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  transition: opacity 0.3s ease;
+  user-select: none;
+}
+
+#image-info {
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 12px 20px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+  z-index: 2100;
+  box-sizing: border-box;
+}
+
+#image-info #file-size {
+  font-size: 14px;
+  margin-right: 20px;
+}
+
+#image-info #delete-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  z-index: 2100;
+  animation: modalFadeIn 0.3s ease;
+}
+
+.modal-content {
+  color: #f0f0f0;
+  background: #1f2023;
+  border: 1px solid #2c2d30;
+  border-radius: 16px;
+  padding: 24px 32px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.modal-content h3 {
+  font-size: 20px;
+  font-weight: 400;
+  margin-bottom: 24px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.modal-field label {
+  font-size: 14px;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.modal-field input {
+  width: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+  background: #202225;
+  border: 1px solid #404249;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #ffffff;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 10px;
+}
+
+.button-group button {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  border-radius: 8px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}

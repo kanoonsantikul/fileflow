@@ -1,0 +1,31 @@
+.themed-button, .critical-button, .gray-button {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+}
+
+.themed-button:hover, .critical-button:hover, .gray-button:hover {
+  transform: scale(1.05);
+}
+
+.themed-button {
+  background: #5865F2;
+}
+.themed-button:hover {
+  background: #4752c4;
+}
+
+.critical-button {
+  background: #f44336;
+}
+.critical-button:hover {
+  background: #d32f2f;
+}
+
+.gray-button {
+  background: #2f3136;
+}
+.gray-button:hover {
+  background: #404249;
+}
