@@ -27,6 +27,16 @@
   visibility: hidden;
 }
 
+.item.loading {
+  background: #2b2d31;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.item.loading .thumb,
+.item.loading .label {
+  display: none;
+}
+
 .thumb-wrapper {
   position: relative;
   width: 100%;
