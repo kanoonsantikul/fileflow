@@ -154,6 +154,17 @@ export function setupEventListeners() {
     }
   });
 
+  document.addEventListener('keydown', (event) => {
+    const imageModal = document.getElementById('image-modal');
+    if (!imageModal.classList.contains('hidden')) {
+      if (event.key === 'ArrowLeft') {
+        document.getElementById('prev-button').click();
+      } else if (event.key === 'ArrowRight') {
+        document.getElementById('next-button').click();
+      }
+    }
+  });
+
   window.addEventListener('contextmenu', (event) => {
     event.preventDefault();
 
