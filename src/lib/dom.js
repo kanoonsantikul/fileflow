@@ -9,6 +9,8 @@ export function openFullMedia(path) {
   const modalImg = document.getElementById('modal-img');
   const modalVideo = document.getElementById('modal-video');
   const sizeDisplay = document.getElementById('file-size');
+  const prevButton = document.getElementById('prev-button');
+  const nextButton = document.getElementById('next-button');
 
   state.currentImagePath = path;
 
@@ -33,6 +35,19 @@ export function openFullMedia(path) {
     modalImg.src = `file://${path}`;
   }
 
+  const currentIndex = state.paths.indexOf(path);
+  if (currentIndex === 0) {
+    prevButton.style.display = 'none';
+  } else {
+    prevButton.style.display = 'block';
+  }
+
+  if (currentIndex === state.paths.length - 1) {
+    nextButton.style.display = 'none';
+  } else {
+    nextButton.style.display = 'block';
+  }
+
   modal.classList.remove('hidden');
 }
 
@@ -40,6 +55,8 @@ export function closeFullMedia() {
   const modal = document.getElementById('image-modal');
   const modalImg = document.getElementById('modal-img');
   const modalVideo = document.getElementById('modal-video');
+  const prevButton = document.getElementById('prev-button');
+  const nextButton = document.getElementById('next-button');
 
   if (modalVideo.src) {
     modalVideo.pause();
@@ -51,6 +68,8 @@ export function closeFullMedia() {
   state.currentImagePath = null;
 
   modal.classList.add('hidden');
+  prevButton.style.display = 'none';
+  nextButton.style.display = 'none';
 }
 
 export function removeDeletedItem(deletePath) {
@@ -107,20 +126,26 @@ export function showLockedFileModal(fileName) {
 }
 
 export function setupEventListeners() {
-  const minimizeButton = document.getElementById('minimize-btn');
-  const maximizeButton = document.getElementById('maximize-btn');
-  const closeButton = document.getElementById('close-btn');
-
-  minimizeButton.addEventListener('click', () => {
+  document.getElementById('minimize-btn').addEventListener('click', () => {
     window.api.minimize();
   });
 
-  maximizeButton.addEventListener('click', () => {
+  document.getElementById('maximize-btn').addEventListener('click', () => {
     window.api.maximize();
   });
 
-  closeButton.addEventListener('click', () => {
+  document.getElementById('close-btn').addEventListener('click', () => {
     window.api.close();
+  });
+
+  document.getElementById('prev-button').addEventListener('click', () => {
+    const currentIndex = state.paths.indexOf(state.currentImagePath);
+    openFullMedia(state.paths[currentIndex - 1]);
+  });
+
+  document.getElementById('next-button').addEventListener('click', () => {
+    const currentIndex = state.paths.indexOf(state.currentImagePath);
+    openFullMedia(state.paths[currentIndex + 1]);
   });
 
   document.getElementById('image-modal').addEventListener('click', (event) => {
