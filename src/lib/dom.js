@@ -14,11 +14,13 @@ export function openFullMedia(path) {
 
   state.currentImagePath = path;
 
+  const fileName = getFileName(path);
+
   window.api.getFileSize(path).then(size => {
     if (size) {
-      sizeDisplay.textContent = `File Size: ${formatBytes(size)}`;
+      sizeDisplay.textContent = `${fileName} — ${formatBytes(size)}`;
     } else {
-      sizeDisplay.textContent = `File Size: --`;
+      sizeDisplay.textContent = `${fileName} — Size: --`;
     }
   });
 
@@ -36,17 +38,8 @@ export function openFullMedia(path) {
   }
 
   const currentIndex = state.paths.indexOf(path);
-  if (currentIndex === 0) {
-    prevButton.style.display = 'none';
-  } else {
-    prevButton.style.display = 'block';
-  }
-
-  if (currentIndex === state.paths.length - 1) {
-    nextButton.style.display = 'none';
-  } else {
-    nextButton.style.display = 'block';
-  }
+  prevButton.style.display = currentIndex === 0 ? 'none' : 'block';
+  nextButton.style.display = currentIndex === state.paths.length - 1 ? 'none' : 'block';
 
   modal.classList.remove('hidden');
 }
