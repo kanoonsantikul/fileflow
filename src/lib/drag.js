@@ -72,7 +72,6 @@ export function onMouseMove(event) {
   const targetIndex = row * state.cols + col;
 
   if (
-    state.draggedIndex !== null &&
     targetIndex >= 0 &&
     targetIndex < state.paths.length &&
     targetIndex !== state.lastTargetIndex
@@ -83,7 +82,6 @@ export function onMouseMove(event) {
     state.paths = state.paths.filter(i => !state.selectedItems.has(i));
     state.paths.splice(targetIndex, 0, ...draggedItems);
 
-    state.draggedIndex = targetIndex;
     state.lastTargetIndex = targetIndex;
 
     updateItemsPosition(targetIndex);
@@ -100,13 +98,13 @@ export function onMouseUp() {
   updateItemsPosition();
 
   const isSingle = state.selectedItems.size === 1;
-  state.selectedItems.forEach((element, id) => {
-    state.itemMap.get(id).classList.remove(isSingle ? 'placeholder' : 'selected');
+  state.selectedItems.forEach((element, path) => {
+    state.itemMap.get(path).classList.remove(isSingle ? 'placeholder' : 'selected');
   });
 
-  state.draggedIndex = null;
   state.lastTargetIndex = null;
   state.selectedItems.clear();
+  state.lastSelectedIndex = null;
 
   window.removeEventListener('mousemove', onMouseMove);
   window.removeEventListener('mouseup', onMouseUp);

@@ -161,10 +161,11 @@ export function setupEventListeners() {
   window.addEventListener('contextmenu', (event) => {
     event.preventDefault();
 
-    state.selectedItems.forEach((_, id) => {
-      state.itemMap.get(id).classList.remove('selected');
+    state.selectedItems.forEach((_, path) => {
+      state.itemMap.get(path).classList.remove('selected');
     });
     state.selectedItems.clear();
+    state.lastSelectedIndex = null;
   });
 
   document.getElementById('select-folder-button').addEventListener('click', async () => {

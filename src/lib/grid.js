@@ -84,6 +84,7 @@ export async function renderGrid(originalPaths) {
 
   state.paths = originalPaths;
   state.selectedItems.clear();
+  state.lastSelectedIndex = null;
   state.itemMap.clear();
 
   for (const url of state.thumbURLMap.values()) {
@@ -98,7 +99,7 @@ export async function renderGrid(originalPaths) {
   observer.observe(grid);
 
   updateFolderInfo();
-  state.paths.forEach((path, index) => {
+  state.paths.forEach((path, _) => {
     const item = createItem(path);
     item.setAttribute('data-path', path);
     grid.appendChild(item);
@@ -110,14 +111,36 @@ export async function renderGrid(originalPaths) {
       }
 
       event.preventDefault();
+      const currentIndex = state.paths.indexOf(path);
 
-      if (event.shiftKey) {
+      // Ctrl key → toggle selection
+      if (event.ctrlKey || (event.shiftKey && state.lastSelectedIndex == null)) {
         if (state.selectedItems.has(path)) {
           state.selectedItems.delete(path);
+          if (state.selectedItems.size == 0) {
+            state.lastSelectedIndex = null;
+          }
           item.classList.remove('selected');
         } else {
           state.selectedItems.add(path);
           item.classList.add('selected');
+          state.lastSelectedIndex = currentIndex;
+        }
+        return;
+      }
+
+      // Shift key → select range
+      if (event.shiftKey) {
+        const [start, end] = [
+          Math.min(state.lastSelectedIndex, currentIndex),
+          Math.max(state.lastSelectedIndex, currentIndex),
+        ];
+
+        // Add range selection
+        for (let i = start; i <= end; i++) {
+          const p = state.paths[i];
+          state.selectedItems.add(p);
+          state.itemMap.get(p).classList.add('selected');
         }
         return;
       }
@@ -134,15 +157,14 @@ export async function renderGrid(originalPaths) {
           window.removeEventListener('mousemove', onMouseMoveCheck);
 
           if (!state.selectedItems.has(path)) {
-            state.selectedItems.forEach((_, id) => {
-              state.itemMap.get(id).classList.remove('selected');
+            state.selectedItems.forEach((_, p) => {
+              state.itemMap.get(p).classList.remove('selected');
             });
             state.selectedItems.clear();
             state.selectedItems.add(path);
             item.classList.add('placeholder');
           }
 
-          state.draggedIndex = index;
           createDragPreview(event, state.selectedItems);
 
           window.addEventListener('mousemove', onMouseMove);
@@ -194,8 +216,8 @@ function calculatePosition(index) {
 }
 
 export function updateItemsPosition() {
-  state.paths.forEach((item, index) => {
-    const el = state.itemMap.get(item);
+  state.paths.forEach((path, index) => {
+    const el = state.itemMap.get(path);
     const pos = calculatePosition(index);
     const targetTransform = `translate(${pos.x}px, ${pos.y}px)`;
     if (el.style.transform !== targetTransform) {
